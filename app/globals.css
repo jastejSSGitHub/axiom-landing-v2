@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #1d4ed8;
+  --color-text-main: #111827;
+  --color-text-muted: #6B7280;
+  --color-border-subtle: #E5E7EB;
+  --color-bg-white: #FFFFFF;
+  --color-bg-warm: #F9F8F6;
+  --color-bg-blue: #F0F4FF;
+  --color-dark-cta: #0F172A;
+  
+  --font-sans: -apple-system, 'SF Pro Display', var(--font-inter), sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+}
+
+:root {
+  background-color: var(--color-bg-white);
+  color: var(--color-text-main);
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+@layer utilities {
+  .font-data {
+    font-family: var(--font-mono);
+  }
+
+  /* ── Market ticker marquee (borrowed from Axiom trading app) ── */
+  @keyframes market-pulse-marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+  }
+
+  .market-pulse-marquee {
+    display: flex;
+    width: max-content;
+    animation: market-pulse-marquee 38s linear infinite;
+    will-change: transform;
+  }
+
+  .market-pulse-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .market-pulse-marquee {
+      animation: none;
+      transform: none;
+    }
+  }
+}
