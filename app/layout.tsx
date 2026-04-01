@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import VersionSwitcher from "@/components/VersionSwitcher";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${ibmPlexMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans text-text-main bg-bg-white">{children}<VersionSwitcher /></body>
+      <body className="min-h-full flex flex-col font-sans text-text-main bg-bg-white">{children}</body>
     </html>
   );
 }

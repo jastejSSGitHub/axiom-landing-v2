@@ -28,6 +28,16 @@ body {
     font-family: var(--font-mono);
   }
 
+  /** Horizontal scroll without visible scrollbar (still scrollable / swipeable). */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* ── Market ticker marquee (borrowed from Axiom trading app) ── */
   @keyframes market-pulse-marquee {
     from { transform: translate3d(0, 0, 0); }

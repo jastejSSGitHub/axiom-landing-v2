@@ -3,11 +3,12 @@
 /* eslint-disable react/no-unescaped-entities -- body copy uses contractions and quoted phrases */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Check, ArrowRight, Play, TrendingUp, TrendingDown, UploadCloud, Activity, PieChart } from "lucide-react";
 import type { YahooQuote } from "@/lib/market-data/yahoo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AxiomScoreRow } from "@/lib/types/axiom-scores";
+import { FuturesPlatformShowcase } from "@/components/landing/FuturesPlatformShowcase";
 
 const TICKER_API_SYMBOLS = [
   { sym: "NIFTY", label: "NIFTY 50" },
@@ -178,7 +179,7 @@ function LandingTickerBar({
     <div
       role="region"
       aria-label="Live market tickers"
-      className="w-full overflow-hidden bg-[#F8FAFC] border-b border-gray-100"
+      className="w-full overflow-hidden border-b border-white/55 bg-white/[0.38] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/[0.32]"
       style={{ display: status === "error" ? "none" : undefined }}
     >
       <div className={`${marqueeClass} min-h-[40px] items-center`}>
@@ -386,7 +387,15 @@ function MockupHeroCard({ quoteById, quotesStatus }: { quoteById: Record<string,
   );
 }
 
+const PLACEHOLDER_SCORE_PILLARS = [
+  { label: "FUNDAMENTAL", cap: "65" },
+  { label: "TECHNICAL", cap: "20" },
+  { label: "RERATING", cap: "20" },
+  { label: "DISCOVERY", cap: "10" },
+] as const;
+
 function IndiaMartPlaceholderCard() {
+  const reduceMotion = useReducedMotion();
   return (
     <CardContainer className="w-full max-w-[460px] text-left">
       <div className="p-6 md:p-8 border-b border-gray-200/80">
@@ -397,12 +406,73 @@ function IndiaMartPlaceholderCard() {
         <p className="text-[14px] text-gray-500 mt-3 font-medium">Score computation in progress</p>
         <p className="text-[14px] text-gray-400 mt-4 leading-relaxed">Next batch run: tonight</p>
       </div>
-      <div className="flex flex-col p-6 md:p-8 gap-10 items-center min-h-[320px] justify-center">
-        <div className="relative w-[240px] h-[240px] flex-shrink-0 flex items-center justify-center rounded-2xl bg-gray-50 border border-gray-100">
-          <span className="text-[10px] font-data font-bold tracking-widest text-gray-400 border border-gray-200 rounded-full px-3 py-1 bg-white">
-            Computing...
-          </span>
+      <div className="flex flex-col items-center gap-10 p-6 md:p-8">
+        <div className="relative flex h-[240px] w-[240px] shrink-0 items-center justify-center">
+          <svg className="pointer-events-none absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden>
+            <circle cx="50" cy="50" r="40" stroke="#f3f4f6" strokeWidth="8" fill="none" />
+          </svg>
+          <motion.div
+            className="pointer-events-none absolute inset-0"
+            animate={{ rotate: reduceMotion ? 0 : 360 }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { duration: 2.2, repeat: Infinity, ease: "linear" }
+            }
+          >
+            <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden>
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                className="text-primary"
+                stroke="currentColor"
+                strokeWidth="8"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray="62 190"
+              />
+            </svg>
+          </motion.div>
+          <div className="relative z-10 mt-2 flex flex-col items-center text-center">
+            <span className="font-data text-6xl font-bold tracking-tighter text-gray-300">—</span>
+            <span className="mt-3 font-data text-[12px] font-bold tracking-widest text-gray-400">SCORE</span>
+            <span className="mt-2 text-[13px] font-semibold text-primary">Computing</span>
+          </div>
         </div>
+
+        <div className="flex w-full flex-col gap-5">
+          {PLACEHOLDER_SCORE_PILLARS.map((p, i) => (
+            <div key={p.label} className="flex w-full flex-col gap-2">
+              <div className="flex justify-between font-data text-[11px] font-bold tracking-widest text-gray-500">
+                <span>{p.label}</span>
+                <span className="text-gray-400">
+                  —/{p.cap}
+                </span>
+              </div>
+              <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
+                <motion.div
+                  className="h-full rounded-full bg-primary/35"
+                  animate={reduceMotion ? { width: "22%" } : { width: ["14%", "32%", "14%"] }}
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : {
+                          duration: 2.4,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: i * 0.18,
+                        }
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="w-full text-center font-data text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          8 models · One score · Updates after each batch
+        </p>
       </div>
     </CardContainer>
   );
@@ -847,17 +917,18 @@ export default function Home() {
         ? heroRef.current.getBoundingClientRect().bottom + currentY
         : 600;
 
-      // Only show sticky header after hero is scrolled past
       const isAfterHero = currentY > heroBottom - 80;
       setPastHero(isAfterHero);
 
-      if (isAfterHero) {
-        const scrollingDown = currentY > lastScrollY.current + 4;
-        const scrollingUp = currentY < lastScrollY.current - 4;
-        if (scrollingDown) setHeaderVisible(false);
-        if (scrollingUp)   setHeaderVisible(true);
-      } else {
+      const scrollingDown = currentY > lastScrollY.current + 6;
+      const scrollingUp = currentY < lastScrollY.current - 6;
+
+      // Near top: always show nav. Else: hide on scroll down, show on scroll up (both hero + sticky bars).
+      if (currentY <= 24) {
         setHeaderVisible(true);
+      } else {
+        if (scrollingDown) setHeaderVisible(false);
+        if (scrollingUp) setHeaderVisible(true);
       }
 
       lastScrollY.current = currentY;
@@ -883,14 +954,14 @@ export default function Home() {
       <div
         className={[
           "fixed top-0 left-0 right-0 z-50",
-          "transition-transform duration-300 ease-out",
+          "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0",
           pastHero ? "" : "pointer-events-none",
-          pastHero && headerVisible  ? "translate-y-0"    : "-translate-y-full",
+          pastHero && headerVisible ? "translate-y-0" : "-translate-y-full",
         ].join(" ")}
         style={{ willChange: "transform" }}
       >
-        {/* Navbar row */}
-        <header className="bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-[0_2px_20px_rgba(0,0,0,0.06)]">
+        {/* Navbar row — liquid glass (readable over any section) */}
+        <header className="border-b border-white/70 bg-white/[0.48] shadow-[0_10px_40px_rgba(15,23,42,0.08),inset_0_1px_0_0_rgba(255,255,255,0.92)] backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/[0.42]">
           <div className="max-w-7xl mx-auto px-6 lg:px-8 h-14 flex justify-between items-center">
             <div className="font-bold text-xl tracking-tight flex items-center gap-2 text-primary">
               <div className="w-6 h-6 rounded bg-primary text-white flex items-center justify-center text-xs">A</div>
@@ -915,13 +986,19 @@ export default function Home() {
         <LandingTickerBar quoteById={quoteById} status={quotesStatus} />
       </div>
 
-      {/* Transparent hero-era navbar — only visible before hero is scrolled past */}
+      {/* Hero-era navbar — same hide-on-scroll-down / show-on-scroll-up as sticky bar */}
       <header
         className={[
           "fixed top-0 left-0 right-0 z-40",
-          "transition-all duration-300",
-          pastHero ? "opacity-0 pointer-events-none" : "opacity-100",
+          "border-b border-white/60 bg-white/[0.45] shadow-[0_10px_40px_rgba(15,23,42,0.07),inset_0_1px_0_0_rgba(255,255,255,0.88)] backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/[0.38]",
+          "transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0",
+          pastHero
+            ? "pointer-events-none -translate-y-full opacity-0"
+            : headerVisible
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none -translate-y-full opacity-0",
         ].join(" ")}
+        style={{ willChange: "transform, opacity" }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="font-bold text-xl tracking-tight flex items-center gap-2 text-gray-900">
@@ -1094,7 +1171,11 @@ export default function Home() {
             <div className="w-full lg:w-1/2">
                <FadeInSection>
                  <div className="text-xs font-data font-bold text-primary tracking-widest uppercase mb-4">Axiom Score</div>
-                 <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">One number.<br/>Every variable.</h2>
+                 <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
+                  One number.
+                  <br />
+                  <span className="text-primary">Every variable.</span>
+                </h2>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                    We run every Indian NSE/BSE stock through 8 institutional-grade financial models — Piotroski F-Score, Altman Z-Score, Montier C-Score, DuPont Analysis, and four others adapted for Indian markets. 
                    <br/><br/>
@@ -1129,7 +1210,11 @@ export default function Home() {
             <div className="w-full lg:w-1/2">
                <FadeInSection>
                  <div className="text-xs font-data font-bold text-blue-600 tracking-widest uppercase mb-4">US Futures Signals</div>
-                 <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">Know the exact entry.<br/>Know exactly why.</h2>
+                 <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
+                   Know the exact entry.
+                   <br />
+                   <span className="text-primary">Know exactly why.</span>
+                 </h2>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                    Every Axiom signal fires only when five independent confirmation layers align simultaneously. Structure. Liquidity. Displacement. Entry model. Risk parameters. 
                    <br/><br/>
@@ -1152,6 +1237,40 @@ export default function Home() {
                </FadeInSection>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section
+        className="py-24 lg:py-32 bg-[#F9F8F6] border-y border-gray-100"
+        id="futures-platform"
+      >
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <FadeInSection>
+            <div className="text-xs font-data font-bold text-gray-500 tracking-widest uppercase mb-4">
+              FUTURES WORKSPACE
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 mb-4 max-w-3xl">
+              Stop watching setups fail because you entered a minute too late.{" "}
+              <span className="text-primary">
+                Axiom tells you the zone <em className="italic">before</em> it matters.
+              </span>
+            </h2>
+            <p className="text-gray-600 mb-4 max-w-2xl text-lg leading-relaxed">
+              Most prop traders blow accounts not from bad strategy — from bad timing. They see the setup after
+              it&apos;s already moved. They size wrong. They hold through a news spike.
+            </p>
+            <p className="text-gray-600 mb-4 max-w-2xl text-lg leading-relaxed">
+              Axiom pre-computes your entry zone, stop, and two targets from five-layer confluence — before the candle
+              closes. You open the desk, you see the setup, you decide. That&apos;s it.
+            </p>
+            <p className="text-gray-600 mb-12 max-w-2xl text-lg leading-relaxed">
+              Each card shows: entry zone with exact price range, stop loss, first target, R:R ratio, confidence level,
+              and a one-line context note. Demo labels mark illustrative data.
+            </p>
+          </FadeInSection>
+          <FadeInSection delay={0.08}>
+            <FuturesPlatformShowcase quoteById={quoteById} quotesStatus={quotesStatus} />
+          </FadeInSection>
         </div>
       </section>
 
@@ -1292,7 +1411,7 @@ export default function Home() {
             <div className="text-center mb-16">
               <div className="text-xs font-data font-bold text-gray-400 tracking-widest uppercase mb-4">Simple Pricing</div>
               <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-4">Start free.<br/>Upgrade when you're ready.</h2>
-              <p className="text-gray-500 font-medium">14-day free trial. No credit card required.</p>
+              <p className="text-gray-500 font-medium">7-day free trial. No credit card required.</p>
             </div>
           </FadeInSection>
 
@@ -1331,7 +1450,7 @@ export default function Home() {
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Telegram alerts</li>
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Pro Analysis 10/month</li>
                 </ul>
-                <button className="w-full py-4 rounded-full bg-primary text-white font-semibold hover:bg-blue-800 transition shadow-lg shadow-blue-500/20">Start 14-Day Free Trial</button>
+                <button className="w-full py-4 rounded-full bg-primary text-white font-semibold hover:bg-blue-800 transition shadow-lg shadow-blue-500/20">Start 7-Day Free Trial</button>
               </div>
             </FadeInSection>
 
