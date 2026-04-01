@@ -1,8 +1,54 @@
 "use client";
 
+/* eslint-disable react/no-unescaped-entities -- body copy uses contractions and quoted phrases */
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, useInView } from "framer-motion";
 import { Check, ArrowRight, Play, TrendingUp, TrendingDown, UploadCloud, Activity, PieChart } from "lucide-react";
+import type { YahooQuote } from "@/lib/market-data/yahoo";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import type { AxiomScoreRow } from "@/lib/types/axiom-scores";
+
+const TICKER_API_SYMBOLS = [
+  { sym: "NIFTY", label: "NIFTY 50" },
+  { sym: "MNQ=F", label: "NQ FUT" },
+  { sym: "GC=F", label: "GC GOLD" },
+  { sym: "BANKNIFTY", label: "BANKNIFTY" },
+  { sym: "ES=F", label: "ES FUT" },
+  { sym: "CL=F", label: "CL CRUDE" },
+  { sym: "SI=F", label: "SI SILVER" },
+  { sym: "YM=F", label: "YM DOW" },
+] as const;
+
+const QUOTES_FETCH_URL = `/api/market/quotes?symbols=${TICKER_API_SYMBOLS.map((t) => t.sym).join(",")}`;
+
+function formatTickerPrice(sym: string, n: number): string {
+  if (sym === "NIFTY" || sym === "BANKNIFTY") {
+    return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(n);
+  }
+  if (sym === "CL=F" || sym === "SI=F") {
+    const abs = Math.abs(n);
+    if (sym === "SI=F" && abs < 100) return n.toFixed(2);
+    if (abs < 100) return n.toFixed(2);
+    return n.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  }
+  return n.toLocaleString("en-US", { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+}
+
+function formatChangePct(q: YahooQuote): { text: string; up: boolean } {
+  const cp = q.changePercent;
+  if (!Number.isFinite(cp) || Math.abs(cp) < 0.0005) return { text: "0.00%", up: true };
+  const sign = cp >= 0 ? "+" : "−";
+  return { text: `${sign}${Math.abs(cp).toFixed(2)}%`, up: cp >= 0 };
+}
+
+type QuotesStatus = "loading" | "ok" | "error";
+
+function quotesRecord(list: YahooQuote[]): Record<string, YahooQuote> {
+  const m: Record<string, YahooQuote> = {};
+  for (const q of list) m[q.id] = q;
+  return m;
+}
 
 // --- ANIMATION VARIANTS ---
 const fadeUpVariant = {
@@ -78,50 +124,84 @@ function CountUp({ end, suffix = "", prefix = "" }: { end: number; suffix?: stri
 
 // --- LANDING TICKER BAR (borrowed from Axiom trading app MarketPulseBar) ---
 
-const TICKER_ITEMS = [
-  { label: "NIFTY 50",   price: "22,451",  change: "+0.8%",  up: true },
-  { label: "NQ FUT",     price: "19,240",  change: "−1.2%",  up: false },
-  { label: "GC GOLD",    price: "4,812",   change: "+0.4%",  up: true },
-  { label: "BANKNIFTY",  price: "47,314",  change: "+1.1%",  up: true },
-  { label: "ES FUT",     price: "5,340",   change: "−0.8%",  up: false },
-  { label: "CL CRUDE",   price: "82.40",   change: "+1.1%",  up: true },
-  { label: "SI SILVER",  price: "28.54",   change: "+0.6%",  up: true },
-  { label: "YM DOW",     price: "38,920",  change: "−0.3%",  up: false },
-];
+const TICKER_LOOP_DEFS = [...TICKER_API_SYMBOLS, ...TICKER_API_SYMBOLS, ...TICKER_API_SYMBOLS];
 
-const TICKER_LOOP = [...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS];
-
-function TickerItem({ label, price, change, up }: typeof TICKER_ITEMS[0]) {
+function TickerItemRow({
+  label,
+  quote,
+  sym,
+  loading,
+}: {
+  label: string;
+  sym: string;
+  quote?: YahooQuote;
+  loading: boolean;
+}) {
+  if (loading || !quote) {
+    return (
+      <div className="flex items-center gap-3 px-5 py-2 border-r border-gray-100 shrink-0">
+        <span className="text-[11px] font-bold text-gray-400 tracking-widest uppercase font-data">{label}</span>
+        <span className="inline-block h-[13px] w-[4.5rem] rounded bg-gray-200/90 animate-pulse tabular-nums" aria-hidden />
+        <span className="inline-flex h-[11px] w-11 items-center rounded bg-gray-200/90 animate-pulse" aria-hidden />
+      </div>
+    );
+  }
+  const ch = formatChangePct(quote);
+  const price = formatTickerPrice(sym, quote.price);
   return (
     <div className="flex items-center gap-3 px-5 py-2 border-r border-gray-100 shrink-0">
       <span className="text-[11px] font-bold text-gray-400 tracking-widest uppercase font-data">{label}</span>
       <span className="text-[13px] font-data font-medium tabular-nums text-gray-900">{price}</span>
-      <span className={`text-[11px] font-data font-semibold tabular-nums flex items-center gap-0.5 ${
-        up ? "text-[#059669]" : "text-[#DC2626]"
-      }`}>
-        {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-        {change}
+      <span
+        className={`text-[11px] font-data font-semibold tabular-nums flex items-center gap-0.5 ${
+          ch.up ? "text-[#059669]" : "text-[#DC2626]"
+        }`}
+      >
+        {ch.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+        {ch.text}
       </span>
     </div>
   );
 }
 
-function LandingTickerBar() {
+function LandingTickerBar({
+  quoteById,
+  status,
+}: {
+  quoteById: Record<string, YahooQuote>;
+  status: QuotesStatus;
+}) {
+  const loading = status === "loading";
+  const marqueeClass = loading ? "market-pulse-marquee is-paused" : "market-pulse-marquee";
+
   return (
     <div
       role="region"
       aria-label="Live market tickers"
       className="w-full overflow-hidden bg-[#F8FAFC] border-b border-gray-100"
+      style={{ display: status === "error" ? "none" : undefined }}
     >
-      <div className="market-pulse-marquee min-h-[40px] items-center">
+      <div className={`${marqueeClass} min-h-[40px] items-center`}>
         <div className="flex shrink-0 items-center">
-          {TICKER_LOOP.map((item, i) => (
-            <TickerItem key={`a-${i}`} {...item} />
+          {TICKER_LOOP_DEFS.map((def, i) => (
+            <TickerItemRow
+              key={`a-${def.sym}-${i}`}
+              label={def.label}
+              sym={def.sym}
+              quote={quoteById[def.sym]}
+              loading={loading}
+            />
           ))}
         </div>
         <div className="flex shrink-0 items-center" aria-hidden>
-          {TICKER_LOOP.map((item, i) => (
-            <TickerItem key={`b-${i}`} {...item} />
+          {TICKER_LOOP_DEFS.map((def, i) => (
+            <TickerItemRow
+              key={`b-${def.sym}-${i}`}
+              label={def.label}
+              sym={def.sym}
+              quote={quoteById[def.sym]}
+              loading={loading}
+            />
           ))}
         </div>
       </div>
@@ -141,7 +221,78 @@ function CardContainer({ children, className = "" }: { children: React.ReactNode
   );
 }
 
-function MockupHeroCard() {
+function MockupHeroCard({ quoteById, quotesStatus }: { quoteById: Record<string, YahooQuote>; quotesStatus: QuotesStatus }) {
+  const gc = quoteById["GC=F"];
+  const nq = quoteById["MNQ=F"];
+  const bn = quoteById["BANKNIFTY"];
+  const es = quoteById["ES=F"];
+  const cl = quoteById["CL=F"];
+
+  const goldOk = quotesStatus === "ok" && gc && Number.isFinite(gc.price);
+  const live = goldOk ? gc.price : null;
+  const entryLow = live != null ? live - 10 : null;
+  const entryHigh = live != null ? live + 10 : null;
+  const stopLoss = live != null ? live - 26 : null;
+  const target1 = live != null ? live + 32 : null;
+  const target2 = live != null ? live + 54 : null;
+
+  const fmtGold = (n: number) => formatTickerPrice("GC=F", n);
+  const entryStr =
+    entryLow != null && entryHigh != null ? `${fmtGold(entryLow)}–${fmtGold(entryHigh)}` : "—";
+  const stopStr = stopLoss != null ? fmtGold(stopLoss) : "—";
+  const t1Str = target1 != null ? fmtGold(target1) : "—";
+  const t2Str = target2 != null ? fmtGold(target2) : "—";
+
+  const miniLine = (q: YahooQuote | undefined, label: string) => {
+    if (quotesStatus === "loading" && !q) return `${label} …`;
+    if (!q) return `${label} —`;
+    const ch = formatChangePct(q);
+    const color = ch.up ? "text-green-400" : "text-red-400";
+    const arrow = ch.up ? "▲" : "▼";
+    return (
+      <>
+        {label} {formatTickerPrice(q.id, q.price)} <span className={color}>{arrow}{ch.text}</span>
+      </>
+    );
+  };
+
+  const watchRow = (name: string, code: string, q: YahooQuote | undefined, active: boolean) => {
+    const loading = quotesStatus === "loading" && !q;
+    const ch = q ? formatChangePct(q) : null;
+    return (
+      <div
+        key={name}
+        className={`p-3 rounded-xl border ${active ? "border-green-200 bg-green-50/30" : "border-gray-100 bg-white shadow-sm"}`}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <div className="text-[11px] font-bold text-gray-900">{name}</div>
+            <div className="text-[9px] font-data text-gray-400 tracking-widest font-semibold">{code}</div>
+          </div>
+          {active && <div className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse"></div>}
+        </div>
+        <div className="text-[13px] font-data font-semibold mb-0.5">
+          {loading ? <span className="inline-block h-4 w-14 rounded bg-gray-200 animate-pulse" /> : q ? formatTickerPrice(q.id, q.price) : "—"}
+        </div>
+        <div
+          className={`text-[10px] font-data font-semibold ${
+            ch ? (ch.up ? "text-green-600" : "text-red-500") : "text-gray-400"
+          }`}
+        >
+          {loading ? (
+            <span className="inline-block h-3 w-12 rounded bg-gray-200 animate-pulse" />
+          ) : ch ? (
+            <>
+              {ch.up ? "▲" : "▼"} {ch.text}
+            </>
+          ) : (
+            "—"
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <motion.div
       className="origin-center w-full max-w-[500px] hover:rotate-0 transition-transform duration-500 cursor-pointer"
@@ -159,13 +310,15 @@ function MockupHeroCard() {
             animate={{ x: [0, -500] }}
             transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
           >
-            <span>NQ FUT 19,240 <span className="text-red-400">▼-1.2%</span></span>
+            <span>{miniLine(nq, "NQ FUT")}</span>
             <span>·</span>
-            <span>GC (GOLD) 4,812 <span className="text-green-400">▲+0.4%</span></span>
+            <span>{miniLine(gc, "GC (GOLD)")}</span>
             <span>·</span>
-            <span>BANKNIFTY 47,314 <span className="text-green-400">▲+1.1%</span></span>
+            <span>{miniLine(bn, "BANKNIFTY")}</span>
             <span>·</span>
-            <span>ES FUT 5,340 <span className="text-red-400">▼-0.8%</span></span>
+            <span>{miniLine(es, "ES FUT")}</span>
+            <span>·</span>
+            <span>{miniLine(cl, "CL")}</span>
           </motion.div>
         </div>
 
@@ -191,29 +344,16 @@ function MockupHeroCard() {
 
           {/* Watchlist */}
           <div className="grid grid-cols-3 gap-3">
-            {[ 
-              { name: "Gold", code: "COMEX", price: "4,812", chg: "+0.38%", up: true, active: true },
-              { name: "Nasdaq 100", code: "CME", price: "19,240", chg: "-1.20%", up: false },
-              { name: "Crude Oil", code: "NYMEX", price: "82.40", chg: "+1.12%", up: true }
-            ].map((itm, i) => (
-              <div key={i} className={`p-3 rounded-xl border ${itm.active ? 'border-green-200 bg-green-50/30' : 'border-gray-100 bg-white shadow-sm'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="text-[11px] font-bold text-gray-900">{itm.name}</div>
-                    <div className="text-[9px] font-data text-gray-400 tracking-widest font-semibold">{itm.code}</div>
-                  </div>
-                  {itm.active && <div className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse"></div>}
-                </div>
-                <div className="text-[13px] font-data font-semibold mb-0.5">{itm.price}</div>
-                <div className={`text-[10px] font-data font-semibold ${itm.up ? 'text-green-600' : 'text-red-500'}`}>
-                  {itm.up ? '▲' : '▼'} {itm.chg}
-                </div>
-              </div>
-            ))}
+            {watchRow("Gold", "COMEX", gc, true)}
+            {watchRow("Nasdaq 100", "CME", nq, false)}
+            {watchRow("Crude Oil", "NYMEX", cl, false)}
           </div>
 
           {/* Signal Card */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="relative border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <span className="absolute top-3 right-3 z-10 bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-medium rounded-full px-2 py-0.5">
+              Demo
+            </span>
             <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
               <div className="flex items-center gap-2 font-data text-[11px] font-bold text-gray-800 tracking-wider">
                 Gold · GC <span className="text-[#00E676] mx-1">●</span> <span className="text-green-600">↗ LONG</span>
@@ -224,13 +364,13 @@ function MockupHeroCard() {
             </div>
             <div className="p-4 bg-white grid gap-3">
               <div className="grid grid-cols-3 gap-4 text-[11px] font-data">
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">ENTRY</div><div className="font-semibold">4,808–4,818</div></div>
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">STOP</div><div className="text-red-500 font-semibold">4,792</div></div>
+                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">ENTRY</div><div className="font-semibold">{entryStr}</div></div>
+                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">STOP</div><div className="text-red-500 font-semibold">{stopStr}</div></div>
                 <div><div className="text-gray-400 tracking-widest font-semibold mb-1">R:R</div><div className="font-semibold">2.1:1</div></div>
               </div>
               <div className="grid grid-cols-3 gap-4 text-[11px] font-data">
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">TARGET 1</div><div className="text-[#059669] font-semibold">4,840</div></div>
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">TARGET 2</div><div className="text-[#059669] font-semibold">4,862</div></div>
+                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">TARGET 1</div><div className="text-[#059669] font-semibold">{t1Str}</div></div>
+                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">TARGET 2</div><div className="text-[#059669] font-semibold">{t2Str}</div></div>
                 <div><div className="text-gray-400 tracking-widest font-semibold mb-1">CONFIDENCE</div><div className="font-semibold">82%</div></div>
               </div>
             </div>
@@ -246,16 +386,102 @@ function MockupHeroCard() {
   );
 }
 
+function IndiaMartPlaceholderCard() {
+  return (
+    <CardContainer className="w-full max-w-[460px] text-left">
+      <div className="p-6 md:p-8 border-b border-gray-200/80">
+        <h3 className="text-xl font-bold text-gray-700 leading-tight flex items-center gap-2">
+          IndiaMART InterMESH
+          <span className="text-[11px] bg-gray-100 text-gray-400 px-2 py-1 rounded-md font-data tracking-widest">NSE</span>
+        </h3>
+        <p className="text-[14px] text-gray-500 mt-3 font-medium">Score computation in progress</p>
+        <p className="text-[14px] text-gray-400 mt-4 leading-relaxed">Next batch run: tonight</p>
+      </div>
+      <div className="flex flex-col p-6 md:p-8 gap-10 items-center min-h-[320px] justify-center">
+        <div className="relative w-[240px] h-[240px] flex-shrink-0 flex items-center justify-center rounded-2xl bg-gray-50 border border-gray-100">
+          <span className="text-[10px] font-data font-bold tracking-widest text-gray-400 border border-gray-200 rounded-full px-3 py-1 bg-white">
+            Computing...
+          </span>
+        </div>
+      </div>
+    </CardContainer>
+  );
+}
+
+function scoreTierLabel(total: number): { text: string; className: string } {
+  if (total >= 80) return { text: "Strong", className: "text-green-600" };
+  if (total >= 60) return { text: "Fair", className: "text-amber-500" };
+  return { text: "Watch", className: "text-gray-500" };
+}
+
 function MockupScoreCard() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-20% 0px" });
+  const [row, setRow] = useState<AxiomScoreRow | null | undefined>(undefined);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      queueMicrotask(() => setRow(null));
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("axiom_scores")
+        .select("score_total, score_fundamentals, score_technicals, score_rerating, score_discovery, narrative, symbol, computed_at")
+        .or("symbol.eq.INDIAMART,symbol.eq.INDIAMART.NS")
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        setRow(null);
+        return;
+      }
+      setRow(data as AxiomScoreRow);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (row === undefined) {
+    return (
+      <CardContainer className="w-full max-w-[460px] text-left">
+        <div className="p-6 md:p-8 flex items-center justify-center min-h-[200px] text-gray-400 text-sm font-medium">Loading…</div>
+      </CardContainer>
+    );
+  }
+
+  if (!row || row.score_total == null || !(row.score_total > 0)) {
+    return <IndiaMartPlaceholderCard />;
+  }
+
+  const total = Number(row.score_total);
+  const f = Number(row.score_fundamentals ?? 0);
+  const t = Number(row.score_technicals ?? 0);
+  const r = Number(row.score_rerating ?? 0);
+  const d = Number(row.score_discovery ?? 0);
+  const pFund = Math.min(100, Math.max(0, (f / 65) * 100));
+  const pTech = Math.min(100, Math.max(0, (t / 20) * 100));
+  const pRer = Math.min(100, Math.max(0, (r / 20) * 100));
+  const pDisc = Math.min(100, Math.max(0, (d / 10) * 100));
+  const pillars = [
+    { label: "FUNDAMENTAL", val: `${Math.round(Math.min(65, f))}/65`, fill: pFund },
+    { label: "TECHNICAL", val: `${Math.round(Math.min(20, t))}/20`, fill: pTech },
+    { label: "RERATING", val: `${Math.round(Math.min(20, r))}/20`, fill: pRer },
+    { label: "DISCOVERY", val: `${Math.round(Math.min(10, d))}/10`, fill: pDisc },
+  ];
+  const tier = scoreTierLabel(total);
+  const ringFrac = Math.min(1, Math.max(0, total / 100));
 
   return (
     <CardContainer className="w-full max-w-[460px] text-left">
       <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-start">
         <div>
           <h3 className="text-xl font-bold text-gray-900 leading-tight flex items-center gap-2">
-            IndiaMART InterMESH 
+            IndiaMART InterMESH
             <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-1 rounded-md font-data tracking-widest">NSE</span>
           </h3>
           <p className="text-[14px] text-gray-500 mt-2 font-medium">B2B Internet Platform · ₹12,735 Cr</p>
@@ -268,53 +494,54 @@ function MockupScoreCard() {
         </div>
       </div>
       <div className="flex flex-col p-6 md:p-8 gap-10 items-center">
-        {/* SVG Ring */}
         <div ref={ref} className="relative w-[240px] h-[240px] flex-shrink-0 flex items-center justify-center">
           <svg className="w-full h-full transform -rotate-90 absolute top-0 left-0" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" stroke="#f3f4f6" strokeWidth="8" fill="none" />
-            <motion.circle 
-              cx="50" cy="50" r="40" stroke="#f59e0b" strokeWidth="8" fill="none"
+            <motion.circle
+              cx="50"
+              cy="50"
+              r="40"
+              stroke="#f59e0b"
+              strokeWidth="8"
+              fill="none"
               strokeLinecap="round"
               strokeDasharray="251.2"
               initial={{ strokeDashoffset: 251.2 }}
-              animate={isInView ? { strokeDashoffset: 251.2 - (251.2 * 0.683) } : {}}
+              animate={isInView ? { strokeDashoffset: 251.2 - 251.2 * ringFrac } : {}}
               transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
             />
           </svg>
           <div className="text-center z-10 flex flex-col items-center mt-2">
             <span className="font-data text-6xl font-bold tracking-tighter text-gray-900">
-              {isInView ? <CountUp end={68.3} suffix="" /> : "0.0"}
+              {isInView ? total.toFixed(1) : "—"}
             </span>
             <span className="text-[12px] font-data font-bold text-gray-400 tracking-widest leading-none mt-3">SCORE</span>
-            <span className="text-[14px] font-bold text-amber-500 mt-1.5 tracking-tight">Fair</span>
+            <span className={`text-[14px] font-bold mt-1.5 tracking-tight ${tier.className}`}>{tier.text}</span>
           </div>
-          {/* Chips */}
-          <div className="absolute top-1 right-[-10px] bg-[#00E676] text-[#064E3B] px-3 py-1.5 rounded-full text-[10px] font-data font-bold tracking-widest shadow-md">WEALTH EXPLODER</div>
-          <div className="absolute bottom-1 left-[-5px] bg-[#F59E0B] text-amber-900 px-3 py-1.5 rounded-full text-[10px] font-data font-bold tracking-widest shadow-md">MONITORING</div>
+          <div className="absolute top-1 right-[-10px] bg-[#00E676] text-[#064E3B] px-3 py-1.5 rounded-full text-[10px] font-data font-bold tracking-widest shadow-md">
+            WEALTH EXPLODER
+          </div>
+          <div className="absolute bottom-1 left-[-5px] bg-[#F59E0B] text-amber-900 px-3 py-1.5 rounded-full text-[10px] font-data font-bold tracking-widest shadow-md">
+            MONITORING
+          </div>
         </div>
 
-        {/* Pillars */}
         <div className="w-full flex flex-col gap-5">
-          {[
-            { label: "FUNDAMENTAL", val: "49/65", fill: 75.3 },
-            { label: "TECHNICAL", val: "14/20", fill: 70 },
-            { label: "RERATING", val: "14/20", fill: 70 },
-            { label: "DISCOVERY", val: "7/10", fill: 70 },
-          ].map((row, i) => (
-             <div key={i} className="flex flex-col gap-2 w-full">
-               <div className="flex justify-between text-[11px] font-data text-gray-500 font-bold tracking-widest">
-                 <span>{row.label}</span>
-                 <span className="text-gray-900">{row.val}</span>
-               </div>
-               <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden flex">
-                  <motion.div 
-                    className="h-full bg-blue-600 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={isInView ? { width: `${row.fill}%` } : {}}
-                    transition={{ duration: 1, ease: "easeOut", delay: 0.4 + (i * 0.1) }}
-                  />
-               </div>
-             </div>
+          {pillars.map((p, i) => (
+            <div key={p.label} className="flex flex-col gap-2 w-full">
+              <div className="flex justify-between text-[11px] font-data text-gray-500 font-bold tracking-widest">
+                <span>{p.label}</span>
+                <span className="text-gray-900">{p.val}</span>
+              </div>
+              <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden flex">
+                <motion.div
+                  className="h-full bg-blue-600 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={isInView ? { width: `${p.fill}%` } : {}}
+                  transition={{ duration: 1, ease: "easeOut", delay: 0.4 + i * 0.1 }}
+                />
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -369,7 +596,10 @@ function MockupReasoningCard() {
   const activeIdx = SESSION_NODES.findIndex((s) => s.active);
 
   return (
-    <CardContainer className="w-full text-left max-w-[560px]">
+    <CardContainer className="relative w-full text-left max-w-[560px]">
+      <span className="absolute top-3 right-3 z-10 bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-medium rounded-full px-2 py-0.5">
+        Demo
+      </span>
       {/* ── Top bar ─────────────────────────────────────── */}
       <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
         <div className="text-[10px] font-data font-bold tracking-widest text-gray-400 uppercase">
@@ -542,6 +772,64 @@ function MockupReasoningCard() {
 // --- MAIN PAGE ---
 
 export default function Home() {
+  const [quoteById, setQuoteById] = useState<Record<string, YahooQuote>>({});
+  const [quotesStatus, setQuotesStatus] = useState<QuotesStatus>("loading");
+  const [stockCountLoading, setStockCountLoading] = useState(true);
+  /** 0 = use 220+ fallback */
+  const [stockCountVal, setStockCountVal] = useState(0);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    const t = window.setTimeout(() => ac.abort(), 5000);
+    (async () => {
+      try {
+        const res = await fetch(QUOTES_FETCH_URL, { signal: ac.signal });
+        if (!res.ok) throw new Error("quotes failed");
+        const data = (await res.json()) as unknown;
+        if (!Array.isArray(data)) throw new Error("bad shape");
+        setQuoteById(quotesRecord(data as YahooQuote[]));
+        setQuotesStatus("ok");
+      } catch {
+        setQuoteById({});
+        setQuotesStatus("error");
+      } finally {
+        window.clearTimeout(t);
+      }
+    })();
+    return () => {
+      window.clearTimeout(t);
+      ac.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      queueMicrotask(() => {
+        setStockCountVal(0);
+        setStockCountLoading(false);
+      });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { count, error } = await supabase
+        .from("axiom_scores")
+        .select("*", { count: "exact", head: true })
+        .gt("score_total", 0);
+      if (cancelled) return;
+      setStockCountLoading(false);
+      if (error || count == null || count <= 0) {
+        setStockCountVal(0);
+        return;
+      }
+      setStockCountVal(count);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Track whether user has scrolled past the hero section
   const [pastHero, setPastHero] = useState(false);
   // Track whether the sticky header is visible (hide on scroll-down, show on scroll-up)
@@ -624,7 +912,7 @@ export default function Home() {
         </header>
 
         {/* Ticker row — sits directly below the navbar */}
-        <LandingTickerBar />
+        <LandingTickerBar quoteById={quoteById} status={quotesStatus} />
       </div>
 
       {/* Transparent hero-era navbar — only visible before hero is scrolled past */}
@@ -704,7 +992,7 @@ export default function Home() {
             </div>
 
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-end relative perspective-[1000px]">
-               <MockupHeroCard />
+               <MockupHeroCard quoteById={quoteById} quotesStatus={quotesStatus} />
             </div>
 
           </div>
@@ -717,20 +1005,28 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-center md:text-left divide-x-0 md:divide-x divide-gray-200">
              <FadeInSection delay={0.1}>
                <div className="px-4">
-                 <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1"><CountUp end={220} suffix="+" /></div>
+                 <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1">
+                   {stockCountLoading ? (
+                     "—"
+                   ) : stockCountVal > 0 ? (
+                     <CountUp end={stockCountVal} suffix="+" />
+                   ) : (
+                     <CountUp end={220} suffix="+" />
+                   )}
+                 </div>
                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">NSE/BSE stocks scored</div>
                </div>
              </FadeInSection>
              <FadeInSection delay={0.2}>
                <div className="px-4 md:pl-8">
-                 <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1"><CountUp end={13} /></div>
-                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">US futures instruments</div>
+                 <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1">13</div>
+                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">13 instruments covered</div>
                </div>
              </FadeInSection>
              <FadeInSection delay={0.3}>
                <div className="px-4 md:pl-8">
-                 <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1"><CountUp end={5} suffix="-Layer" /></div>
-                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Signal reasoning</div>
+                 <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1">5-Layer</div>
+                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">5-Layer signal confirmation</div>
                </div>
              </FadeInSection>
              <FadeInSection delay={0.4}>
@@ -925,6 +1221,14 @@ export default function Home() {
                      <li><span className="font-bold text-gray-900">13</span> instruments</li>
                      <li><span className="font-bold text-gray-900">24/7</span> signal scanning</li>
                      <li><span className="font-bold text-gray-900">5-layer</span> confirmation</li>
+                     <li>
+                       <span className="font-bold text-gray-900">Prop firm ready</span>
+                       {" — Tradeify, Topstep, Lucid & more"}
+                     </li>
+                     <li>
+                       <span className="font-bold text-gray-900">Eval & funded account</span>
+                       {" risk calculator built in"}
+                     </li>
                    </ul>
                    <p className="text-[14px] text-gray-500 leading-relaxed mb-8 flex-grow">
                      Gold, Silver, Crude Oil, Natural Gas, Nasdaq 100, S&P 500, Dow Jones, Russell 2000, Treasuries, FX pairs, and Copper.
@@ -997,7 +1301,8 @@ export default function Home() {
             <FadeInSection delay={0.1}>
               <div className="p-8 rounded-[2rem] border border-gray-100 flex flex-col h-full hover:border-gray-200 transition">
                 <h3 className="text-xl font-bold mb-2">Explorer</h3>
-                <div className="font-data text-4xl font-bold text-gray-900 mb-6 tracking-tight">₹0<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
+                <div className="font-data text-4xl font-bold text-gray-900 mb-1 tracking-tight">₹0<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
+                <span className="text-sm text-gray-500 font-medium block mb-6">Free forever</span>
                 <ul className="space-y-4 text-sm text-gray-600 font-medium flex-grow mb-8">
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5"/> 3 score lookups/day</li>
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5"/> Live prices</li>
@@ -1016,7 +1321,9 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-primary">Pro</h3>
                 <div className="font-data text-4xl font-bold text-gray-900 mb-1 tracking-tight">₹799<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
-                <div className="text-xs text-gray-400 mb-6 font-medium">(₹6,999/yr)</div>
+                <span className="text-xs text-gray-400 block">~$9 USD/mo</span>
+                <div className="text-xs text-gray-400 mb-1 font-medium mt-2">(₹6,999/yr)</div>
+                <span className="text-xs text-gray-400 block mb-6">~$80 USD/yr</span>
                 <ul className="space-y-4 text-sm text-gray-800 font-medium flex-grow mb-8">
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Unlimited scores</li>
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Real-time signals + 5-layer reasoning</li>
@@ -1033,7 +1340,9 @@ export default function Home() {
               <div className="p-8 rounded-[2rem] border border-gray-100 flex flex-col h-full hover:border-gray-200 transition">
                 <h3 className="text-xl font-bold mb-2">Elite</h3>
                  <div className="font-data text-4xl font-bold text-gray-900 mb-1 tracking-tight">₹1,999<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
-                <div className="text-xs text-gray-400 mb-6 font-medium">(₹17,999/yr)</div>
+                <span className="text-xs text-gray-400 block">~$23 USD/mo</span>
+                <div className="text-xs text-gray-400 mb-1 font-medium mt-2">(₹17,999/yr)</div>
+                <span className="text-xs text-gray-400 block mb-6">~$205 USD/yr</span>
                 <ul className="space-y-4 text-sm text-gray-600 font-medium flex-grow mb-8">
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-gray-900 shrink-0 mt-0.5"/> Everything in Pro</li>
                   <li className="flex items-start gap-3"><Check className="w-4 h-4 text-gray-900 shrink-0 mt-0.5"/> Unlimited AI</li>
@@ -1044,6 +1353,12 @@ export default function Home() {
               </div>
             </FadeInSection>
           </div>
+          <p className="text-center text-xs text-gray-400 mt-4">
+            USD billing available ·{" "}
+            <a href="mailto:hello@axiom.trade" className="underline">
+              contact us
+            </a>
+          </p>
         </div>
       </section>
 

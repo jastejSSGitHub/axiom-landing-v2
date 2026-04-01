@@ -45,6 +45,10 @@ body {
     animation-play-state: paused;
   }
 
+  .market-pulse-marquee.is-paused {
+    animation-play-state: paused;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .market-pulse-marquee {
       animation: none;
