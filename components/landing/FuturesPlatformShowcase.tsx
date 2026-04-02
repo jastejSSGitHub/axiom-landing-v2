@@ -45,14 +45,13 @@ export function FuturesPlatformShowcase({
 
   return (
     <div className="space-y-16">
-      <div>
+      <div className="text-center">
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-blue-600">SIGNAL CARDS</h3>
-        <p className="mb-8 max-w-2xl text-lg text-gray-600">
+        <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600">
           Not a vague &quot;go long here.&quot; A specific entry zone, stop, and two targets — pre-computed from five
-          layers of confluence before the candle closes. Gold refreshes from live GC quotes when connected. Nasdaq and
-          S&amp;P show monitoring-style setups.
+          layers of confluence before the candle closes.
         </p>
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 text-left lg:grid-cols-3">
           {signals.map((s) => (
             <LandingSignalCard key={s.id} signal={s} />
           ))}

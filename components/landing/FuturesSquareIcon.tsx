@@ -9,6 +9,13 @@ const STYLES: Record<string, { bg: string; label: string }> = {
   CL: { bg: "bg-slate-800", label: "CL" },
   SI: { bg: "bg-slate-500", label: "SI" },
   YM: { bg: "bg-rose-700", label: "YM" },
+  NG: { bg: "bg-cyan-700", label: "NG" },
+  RTY: { bg: "bg-violet-600", label: "RT" },
+  ZN: { bg: "bg-teal-700", label: "ZN" },
+  ZB: { bg: "bg-emerald-800", label: "ZB" },
+  "6E": { bg: "bg-sky-600", label: "€" },
+  "6B": { bg: "bg-red-700", label: "£" },
+  HG: { bg: "bg-orange-700", label: "Cu" },
 };
 
 export function FuturesSquareIcon({

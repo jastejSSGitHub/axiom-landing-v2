@@ -65,4 +65,37 @@ body {
       transform: none;
     }
   }
+
+  /** Landing watchlist strip — same loop as market ticker, slower for wider cards */
+  .landing-watchlist-marquee {
+    display: flex;
+    width: max-content;
+    animation: market-pulse-marquee 52s linear infinite;
+    will-change: transform;
+  }
+
+  .landing-watchlist-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  .landing-watchlist-strip-viewport {
+    overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-watchlist-marquee {
+      animation: none;
+      transform: none;
+    }
+
+    .landing-watchlist-marquee .watchlist-marquee-dup {
+      display: none;
+    }
+
+    .landing-watchlist-strip-viewport {
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+  }
+
 }

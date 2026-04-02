@@ -2,13 +2,15 @@
 
 /* eslint-disable react/no-unescaped-entities -- body copy uses contractions and quoted phrases */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { Check, ArrowRight, Play, TrendingUp, TrendingDown, UploadCloud, Activity, PieChart } from "lucide-react";
+import { Check, ArrowRight, Play, TrendingUp, TrendingDown, UploadCloud, Activity, PieChart, Phone, Box } from "lucide-react";
 import type { YahooQuote } from "@/lib/market-data/yahoo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AxiomScoreRow } from "@/lib/types/axiom-scores";
 import { FuturesPlatformShowcase } from "@/components/landing/FuturesPlatformShowcase";
+import { LandingSignalCard } from "@/components/landing/LandingSignalCard";
+import { LANDING_FUTURES_SIGNALS, type MockFuturesSignal } from "@/lib/landing/mock-signals";
 
 const TICKER_API_SYMBOLS = [
   { sym: "NIFTY", label: "NIFTY 50" },
@@ -19,9 +21,30 @@ const TICKER_API_SYMBOLS = [
   { sym: "CL=F", label: "CL CRUDE" },
   { sym: "SI=F", label: "SI SILVER" },
   { sym: "YM=F", label: "YM DOW" },
+  { sym: "NG=F", label: "NG GAS" },
+  { sym: "RTY=F", label: "RTY" },
+  { sym: "ZN=F", label: "ZN 10Y" },
+  { sym: "ZB=F", label: "ZB 30Y" },
+  { sym: "6E=F", label: "6E EUR" },
+  { sym: "6B=F", label: "6B GBP" },
+  { sym: "HG=F", label: "HG CU" },
 ] as const;
 
 const QUOTES_FETCH_URL = `/api/market/quotes?symbols=${TICKER_API_SYMBOLS.map((t) => t.sym).join(",")}`;
+
+function TelegramLogoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path d="M11.944 0A12 12 0 1 0 24 12.056 12 12 0 0 0 11.944 0zm4.962 7.224c.149-.365.38-.456.784-.271l10.9 4.206c.292.112.28.269.051.338l-2.79.868-6.531-4.11c-.309-.188-.591-.087-.36.125l5.29 4.795-.194 2.859c.112-.002.162.05.225.111l1.419 1.409.61-4.111 7.18-6.715c.297-.264.122-.478-.168-.512z" />
+    </svg>
+  );
+}
 
 function formatTickerPrice(sym: string, n: number): string {
   if (sym === "NIFTY" || sym === "BANKNIFTY") {
@@ -222,27 +245,39 @@ function CardContainer({ children, className = "" }: { children: React.ReactNode
   );
 }
 
-function MockupHeroCard({ quoteById, quotesStatus }: { quoteById: Record<string, YahooQuote>; quotesStatus: QuotesStatus }) {
+function buildHeroGoldSignal(
+  quoteById: Record<string, YahooQuote>,
+  quotesStatus: QuotesStatus
+): MockFuturesSignal {
+  const base = LANDING_FUTURES_SIGNALS[0];
+  const gc = quoteById["GC=F"];
+  const goldOk = quotesStatus === "ok" && gc && Number.isFinite(gc.price);
+  if (!goldOk) return { ...base };
+  const live = gc.price;
+  return {
+    ...base,
+    entryLow: live - 10,
+    entryHigh: live + 10,
+    stop: live - 26,
+    tp1: live + 32,
+    tp2: live + 54,
+  };
+}
+
+function MockupHeroCard({
+  quoteById,
+  quotesStatus,
+  goldSignal,
+}: {
+  quoteById: Record<string, YahooQuote>;
+  quotesStatus: QuotesStatus;
+  goldSignal: MockFuturesSignal;
+}) {
   const gc = quoteById["GC=F"];
   const nq = quoteById["MNQ=F"];
   const bn = quoteById["BANKNIFTY"];
   const es = quoteById["ES=F"];
   const cl = quoteById["CL=F"];
-
-  const goldOk = quotesStatus === "ok" && gc && Number.isFinite(gc.price);
-  const live = goldOk ? gc.price : null;
-  const entryLow = live != null ? live - 10 : null;
-  const entryHigh = live != null ? live + 10 : null;
-  const stopLoss = live != null ? live - 26 : null;
-  const target1 = live != null ? live + 32 : null;
-  const target2 = live != null ? live + 54 : null;
-
-  const fmtGold = (n: number) => formatTickerPrice("GC=F", n);
-  const entryStr =
-    entryLow != null && entryHigh != null ? `${fmtGold(entryLow)}–${fmtGold(entryHigh)}` : "—";
-  const stopStr = stopLoss != null ? fmtGold(stopLoss) : "—";
-  const t1Str = target1 != null ? fmtGold(target1) : "—";
-  const t2Str = target2 != null ? fmtGold(target2) : "—";
 
   const miniLine = (q: YahooQuote | undefined, label: string) => {
     if (quotesStatus === "loading" && !q) return `${label} …`;
@@ -350,36 +385,8 @@ function MockupHeroCard({ quoteById, quotesStatus }: { quoteById: Record<string,
             {watchRow("Crude Oil", "NYMEX", cl, false)}
           </div>
 
-          {/* Signal Card */}
-          <div className="relative border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-            <span className="absolute top-3 right-3 z-10 bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-medium rounded-full px-2 py-0.5">
-              Demo
-            </span>
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-              <div className="flex items-center gap-2 font-data text-[11px] font-bold text-gray-800 tracking-wider">
-                Gold · GC <span className="text-[#00E676] mx-1">●</span> <span className="text-green-600">↗ LONG</span>
-              </div>
-              <div className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded text-[10px] font-data font-bold tracking-widest">
-                ACTIVE
-              </div>
-            </div>
-            <div className="p-4 bg-white grid gap-3">
-              <div className="grid grid-cols-3 gap-4 text-[11px] font-data">
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">ENTRY</div><div className="font-semibold">{entryStr}</div></div>
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">STOP</div><div className="text-red-500 font-semibold">{stopStr}</div></div>
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">R:R</div><div className="font-semibold">2.1:1</div></div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-[11px] font-data">
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">TARGET 1</div><div className="text-[#059669] font-semibold">{t1Str}</div></div>
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">TARGET 2</div><div className="text-[#059669] font-semibold">{t2Str}</div></div>
-                <div><div className="text-gray-400 tracking-widest font-semibold mb-1">CONFIDENCE</div><div className="font-semibold">82%</div></div>
-              </div>
-            </div>
-            <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 text-[10px] flex justify-between items-center text-gray-500 font-data tracking-widest font-semibold">
-              <span>NY Core · Setup: A (4/5)</span>
-              <span className="text-blue-600 hover:text-blue-800 cursor-pointer transition-colors flex items-center gap-1">View reasoning <ArrowRight className="w-3 h-3"/></span>
-            </div>
-          </div>
+          {/* Signal card — same layout as subscription trading app futures SignalCard */}
+          <LandingSignalCard signal={goldSignal} />
 
         </div>
       </CardContainer>
@@ -390,7 +397,6 @@ function MockupHeroCard({ quoteById, quotesStatus }: { quoteById: Record<string,
 const PLACEHOLDER_SCORE_PILLARS = [
   { label: "FUNDAMENTAL", cap: "65" },
   { label: "TECHNICAL", cap: "20" },
-  { label: "RERATING", cap: "20" },
   { label: "DISCOVERY", cap: "10" },
 ] as const;
 
@@ -404,7 +410,6 @@ function IndiaMartPlaceholderCard() {
           <span className="text-[11px] bg-gray-100 text-gray-400 px-2 py-1 rounded-md font-data tracking-widest">NSE</span>
         </h3>
         <p className="text-[14px] text-gray-500 mt-3 font-medium">Score computation in progress</p>
-        <p className="text-[14px] text-gray-400 mt-4 leading-relaxed">Next batch run: tonight</p>
       </div>
       <div className="flex flex-col items-center gap-10 p-6 md:p-8">
         <div className="relative flex h-[240px] w-[240px] shrink-0 items-center justify-center">
@@ -469,10 +474,6 @@ function IndiaMartPlaceholderCard() {
             </div>
           ))}
         </div>
-
-        <p className="w-full text-center font-data text-[10px] font-bold uppercase tracking-widest text-gray-400">
-          8 models · One score · Updates after each batch
-        </p>
       </div>
     </CardContainer>
   );
@@ -499,7 +500,7 @@ function MockupScoreCard() {
     (async () => {
       const { data, error } = await supabase
         .from("axiom_scores")
-        .select("score_total, score_fundamentals, score_technicals, score_rerating, score_discovery, narrative, symbol, computed_at")
+        .select("score_total, score_fundamentals, score_technicals, score_discovery, narrative, symbol, computed_at")
         .or("symbol.eq.INDIAMART,symbol.eq.INDIAMART.NS")
         .order("computed_at", { ascending: false })
         .limit(1)
@@ -531,16 +532,13 @@ function MockupScoreCard() {
   const total = Number(row.score_total);
   const f = Number(row.score_fundamentals ?? 0);
   const t = Number(row.score_technicals ?? 0);
-  const r = Number(row.score_rerating ?? 0);
   const d = Number(row.score_discovery ?? 0);
   const pFund = Math.min(100, Math.max(0, (f / 65) * 100));
   const pTech = Math.min(100, Math.max(0, (t / 20) * 100));
-  const pRer = Math.min(100, Math.max(0, (r / 20) * 100));
   const pDisc = Math.min(100, Math.max(0, (d / 10) * 100));
   const pillars = [
     { label: "FUNDAMENTAL", val: `${Math.round(Math.min(65, f))}/65`, fill: pFund },
     { label: "TECHNICAL", val: `${Math.round(Math.min(20, t))}/20`, fill: pTech },
-    { label: "RERATING", val: `${Math.round(Math.min(20, r))}/20`, fill: pRer },
     { label: "DISCOVERY", val: `${Math.round(Math.min(10, d))}/10`, fill: pDisc },
   ];
   const tier = scoreTierLabel(total);
@@ -619,226 +617,6 @@ function MockupScoreCard() {
   );
 }
 
-// Confidence bar animate on view
-function ConfidenceBar({ value }: { value: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-10% 0px" });
-  return (
-    <div ref={ref} className="h-2 w-full overflow-hidden rounded-full bg-gray-100 mt-1.5">
-      <motion.div
-        className="h-full rounded-full bg-blue-600"
-        initial={{ width: 0 }}
-        animate={isInView ? { width: `${value}%` } : {}}
-        transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-      />
-    </div>
-  );
-}
-
-// Vertical rule between columns (mirrors the actual SignalCard COL_DIVIDER)
-function ColDivider({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`relative ${className} after:pointer-events-none after:absolute after:right-0 after:top-1/4 after:h-1/2 after:w-px after:bg-gray-200 after:content-['']`}>
-      {children}
-    </div>
-  );
-}
-
-const SESSION_NODES = [
-  { key: "LONDON",  label: "LONDON",  time: "2AM–5AM ET",     active: false, hasSignal: true  },
-  { key: "PREMKT",  label: "PRE-MKT", time: "5–9:30AM ET",    active: true,  hasSignal: false },
-  { key: "NYCORE",  label: "NY CORE", time: "9:30–11:30AM ET",active: false, hasSignal: false },
-  { key: "LUNCH",   label: "LUNCH",   time: "11:30AM–1PM ET", active: false, hasSignal: false },
-  { key: "PM",      label: "PM",      time: "1–3:30PM ET",    active: false, hasSignal: false },
-  { key: "CLOSE",   label: "CLOSE",   time: "3:30–6PM ET",    active: false, hasSignal: false },
-  { key: "ASIA",    label: "ASIA",    time: "6PM–2AM ET",     active: false, hasSignal: false },
-];
-
-const LAYERS = [
-  { l: 1, text: "Higher timeframe bullish structure confirmed; discount zone held." },
-  { l: 2, text: "Liquidity sweep below prior low; displacement up with volume." },
-  { l: 3, text: "Order block alignment with fair value gap fill zone." },
-  { l: 4, text: "Entry model: break-and-retest of internal range." },
-  { l: 5, text: "Risk capped; R:R exceeds desk minimum before release." },
-];
-
-function MockupReasoningCard() {
-  const activeIdx = SESSION_NODES.findIndex((s) => s.active);
-
-  return (
-    <CardContainer className="relative w-full text-left max-w-[560px]">
-      <span className="absolute top-3 right-3 z-10 bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-medium rounded-full px-2 py-0.5">
-        Demo
-      </span>
-      {/* ── Top bar ─────────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-        <div className="text-[10px] font-data font-bold tracking-widest text-gray-400 uppercase">
-          NY CORE IN <span className="text-gray-700">28M</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-data font-bold tracking-widest text-gray-400 uppercase">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse inline-block" />
-          1 Active · 1 Monitoring
-        </div>
-      </div>
-
-      {/* ── Session Timeline ────────────────────────────── */}
-      <div className="px-5 pt-4 pb-3 border-b border-gray-100">
-        <div className="relative flex items-start justify-between gap-0">
-          {/* baseline track */}
-          <div
-            className="absolute h-0.5 bg-gray-200 z-0"
-            style={{ top: "6px", left: `calc(100% / ${SESSION_NODES.length * 2})`, right: `calc(100% / ${SESSION_NODES.length * 2})` }}
-          />
-          {/* active progress fill */}
-          <div
-            className="absolute h-0.5 bg-blue-500 z-0"
-            style={{
-              top: "6px",
-              left: `calc(100% / ${SESSION_NODES.length * 2})`,
-              width: `${(activeIdx / (SESSION_NODES.length - 1)) * (100 - (100 / SESSION_NODES.length))}%`,
-            }}
-          />
-
-          {SESSION_NODES.map((node, i) => {
-            const isActive = node.active;
-            return (
-              <div key={node.key} className="relative flex flex-col items-center gap-0 z-10 flex-1">
-                {/* Signal dot above node */}
-                {node.hasSignal && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#00E676] shadow-[0_0_5px_#00E676] z-20" />
-                )}
-                {/* NOW pill */}
-                {isActive && (
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded-sm bg-blue-600 text-white text-[8px] font-data font-bold tracking-widest z-20">
-                    NOW
-                  </div>
-                )}
-                {/* Node dot */}
-                <div
-                  className={`w-3 h-3 rounded-full border-2 border-white shadow-sm flex-shrink-0 ${
-                    isActive
-                      ? "bg-blue-600 ring-2 ring-blue-200"
-                      : i < activeIdx
-                      ? "bg-blue-300"
-                      : "bg-gray-300"
-                  }`}
-                />
-                {/* Label + time */}
-                <div className="mt-2 flex flex-col items-center text-center gap-0.5">
-                  <span className={`text-[8px] font-bold tracking-widest uppercase leading-none ${isActive ? "text-gray-900" : "text-gray-400"}`}>
-                    {node.label}
-                  </span>
-                  <span className="text-[7px] font-data text-gray-400 leading-tight whitespace-nowrap hidden sm:block">
-                    {node.time}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Signal Header ───────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="font-bold text-sm text-gray-900 tracking-tight">Gold · GC</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-[10px] font-data font-bold text-green-700 tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] inline-block" />
-            ↗ LONG
-          </span>
-        </div>
-        <span className="text-[10px] font-data font-bold tracking-widest text-gray-400 border border-gray-200 rounded px-2 py-0.5 uppercase">
-          ACTIVE
-        </span>
-      </div>
-
-      {/* ── Signal Data Grid ────────────────────────────── */}
-      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
-        {/* Row 1 */}
-        <div className="grid grid-cols-3 gap-0 mb-0">
-          <ColDivider className="pr-4 space-y-1">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Entry zone</div>
-            <div className="font-data text-[15px] font-bold leading-tight text-gray-900 tabular-nums">4,808 – 4,818</div>
-          </ColDivider>
-          <ColDivider className="px-4 space-y-1">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Stop loss</div>
-            <div className="font-data text-[15px] font-bold leading-tight text-red-700 tabular-nums">4,792</div>
-            <div className="text-[9px] font-data text-gray-400">26 pts · −$260</div>
-          </ColDivider>
-          <div className="pl-4 space-y-1">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400">R:R</div>
-            <div className="font-data text-[15px] font-bold leading-tight text-gray-900 tabular-nums">2.1 : 1</div>
-          </div>
-        </div>
-
-        {/* Thin divider */}
-        <div className="my-3 border-t border-gray-200/60" />
-
-        {/* Row 2 */}
-        <div className="grid grid-cols-3 gap-0">
-          <ColDivider className="pr-4 space-y-1 text-center">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 text-center">Target 1</div>
-            <div className="flex flex-col items-center gap-0.5">
-              <span className="font-data text-[14px] font-medium tabular-nums text-[#059669]">4,840</span>
-              <span className="font-data text-[9px] tabular-nums text-gray-500">+$320</span>
-            </div>
-          </ColDivider>
-          <ColDivider className="px-4 space-y-1 text-center">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 text-center">Target 2</div>
-            <div className="flex flex-col items-center gap-0.5">
-              <span className="font-data text-[14px] font-medium tabular-nums text-[#059669]">4,862</span>
-              <span className="font-data text-[9px] tabular-nums text-gray-500">+$540</span>
-            </div>
-          </ColDivider>
-          <div className="pl-4 space-y-1">
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Confidence</span>
-              <span className="font-data text-[9px] font-bold text-blue-600 tabular-nums">82%</span>
-            </div>
-            <ConfidenceBar value={82} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Five-Layer Reasoning ─────────────────────────── */}
-      <div className="px-5 py-4">
-        <div className="text-[9px] font-data font-bold tracking-widest uppercase text-gray-400 mb-3">
-          Five-Layer Reasoning
-        </div>
-        <div className="space-y-3">
-          {LAYERS.map((layer, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -8 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.08 * i, duration: 0.35 }}
-              className="flex gap-2.5 items-start"
-            >
-              <div className="mt-0.5 w-4 h-4 rounded-full bg-green-50 border border-green-200 text-[#059669] flex items-center justify-center flex-shrink-0">
-                <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-              </div>
-              <div>
-                <span className="text-[9px] font-data font-bold text-[#059669] tracking-wider uppercase">
-                  Layer {layer.l} ✓ CONFIRMED
-                </span>
-                <span className="text-[9px] text-gray-500 ml-1">— {layer.text}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-        {/* Footer row */}
-        <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-[9px] font-data font-semibold tracking-widest text-gray-400">
-          <span>NY Core · Setup: A (4/5)</span>
-          <span className="text-blue-600 hover:text-blue-800 cursor-pointer transition-colors flex items-center gap-1">
-            View full reasoning <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
-      </div>
-    </CardContainer>
-  );
-}
-
 // --- MAIN PAGE ---
 
 export default function Home() {
@@ -847,6 +625,11 @@ export default function Home() {
   const [stockCountLoading, setStockCountLoading] = useState(true);
   /** 0 = use 220+ fallback */
   const [stockCountVal, setStockCountVal] = useState(0);
+
+  const heroGoldSignal = useMemo(
+    () => buildHeroGoldSignal(quoteById, quotesStatus),
+    [quoteById, quotesStatus]
+  );
 
   useEffect(() => {
     const ac = new AbortController();
@@ -1069,7 +852,7 @@ export default function Home() {
             </div>
 
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-end relative perspective-[1000px]">
-               <MockupHeroCard quoteById={quoteById} quotesStatus={quotesStatus} />
+               <MockupHeroCard quoteById={quoteById} quotesStatus={quotesStatus} goldSignal={heroGoldSignal} />
             </div>
 
           </div>
@@ -1135,21 +918,27 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <FadeInSection delay={0.1}>
               <div className="bg-gray-50 p-8 rounded-[2rem] h-full border border-gray-100">
-                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-xl font-bold mb-6">1</div>
+                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-900 mb-6">
+                   <Phone className="w-6 h-6" strokeWidth={1.75} aria-hidden />
+                 </div>
                  <h3 className="text-xl font-bold mb-3">The cold call</h3>
                  <p className="text-gray-600 leading-relaxed text-sm">An unknown number calls. He has a 'hot tip.' He earns commission whether you make money or not. You have no idea how he derived the signal. You're trading blind.</p>
               </div>
             </FadeInSection>
             <FadeInSection delay={0.2}>
               <div className="bg-gray-50 p-8 rounded-[2rem] h-full border border-gray-100">
-                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-xl font-bold mb-6">2</div>
+                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-[#229ED9] mb-6">
+                   <TelegramLogoIcon className="w-6 h-6" />
+                 </div>
                  <h3 className="text-xl font-bold mb-3">The Telegram group</h3>
                  <p className="text-gray-600 leading-relaxed text-sm">500 members receive the same signal at the same time. By the time you act, the operator has already exited. You're the exit liquidity.</p>
               </div>
             </FadeInSection>
             <FadeInSection delay={0.3}>
               <div className="bg-gray-50 p-8 rounded-[2rem] h-full border border-gray-100">
-                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-xl font-bold mb-6">3</div>
+                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-900 mb-6">
+                   <Box className="w-6 h-6" strokeWidth={1.75} aria-hidden />
+                 </div>
                  <h3 className="text-xl font-bold mb-3">The black box tip</h3>
                  <p className="text-gray-600 leading-relaxed text-sm">No reasoning. No data. No accountability. Just 'trust me.' When it fails — and it will — there's no explanation. Just silence.</p>
               </div>
@@ -1177,7 +966,7 @@ export default function Home() {
                   <span className="text-primary">Every variable.</span>
                 </h2>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                   We run every Indian NSE/BSE stock through 8 institutional-grade financial models — Piotroski F-Score, Altman Z-Score, Montier C-Score, DuPont Analysis, and four others adapted for Indian markets. 
+                   We run every Indian NSE/BSE stock through 8 institutional-grade financial models.
                    <br/><br/>
                    The output: a single score from 0–100. Rigorously validated. No hunches. No conflicts of interest.
                  </p>
@@ -1204,7 +993,9 @@ export default function Home() {
           <div className="flex flex-col-reverse lg:flex-row gap-16 items-center">
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
                <FadeInSection delay={0.2}>
-                  <MockupReasoningCard />
+                  <div className="w-full max-w-[500px]">
+                    <LandingSignalCard signal={heroGoldSignal} />
+                  </div>
                </FadeInSection>
             </div>
             <div className="w-full lg:w-1/2">
@@ -1246,27 +1037,25 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <FadeInSection>
-            <div className="text-xs font-data font-bold text-gray-500 tracking-widest uppercase mb-4">
-              FUTURES WORKSPACE
+            <div className="text-center">
+              <div className="text-xs font-data font-bold text-gray-500 tracking-widest uppercase mb-4">
+                FUTURES WORKSPACE
+              </div>
+              <h2 className="mx-auto text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 mb-4 max-w-3xl">
+                Stop watching setups fail because you entered a minute too late.{" "}
+                <span className="text-primary">
+                  Axiom tells you the zone <em className="italic">before</em> it matters.
+                </span>
+              </h2>
+              <p className="mx-auto text-gray-600 mb-4 max-w-2xl text-lg leading-relaxed">
+                Most prop traders blow accounts not from bad strategy — from bad timing. They see the setup after
+                it&apos;s already moved. They size wrong. They hold through a news spike.
+              </p>
+              <p className="mx-auto text-gray-600 mb-12 max-w-2xl text-lg leading-relaxed">
+                Axiom pre-computes your entry zone, stop, and two targets from five-layer confluence — before the candle
+                closes. You open the desk, you see the setup, you decide. That&apos;s it.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 mb-4 max-w-3xl">
-              Stop watching setups fail because you entered a minute too late.{" "}
-              <span className="text-primary">
-                Axiom tells you the zone <em className="italic">before</em> it matters.
-              </span>
-            </h2>
-            <p className="text-gray-600 mb-4 max-w-2xl text-lg leading-relaxed">
-              Most prop traders blow accounts not from bad strategy — from bad timing. They see the setup after
-              it&apos;s already moved. They size wrong. They hold through a news spike.
-            </p>
-            <p className="text-gray-600 mb-4 max-w-2xl text-lg leading-relaxed">
-              Axiom pre-computes your entry zone, stop, and two targets from five-layer confluence — before the candle
-              closes. You open the desk, you see the setup, you decide. That&apos;s it.
-            </p>
-            <p className="text-gray-600 mb-12 max-w-2xl text-lg leading-relaxed">
-              Each card shows: entry zone with exact price range, stop loss, first target, R:R ratio, confidence level,
-              and a one-line context note. Demo labels mark illustrative data.
-            </p>
           </FadeInSection>
           <FadeInSection delay={0.08}>
             <FuturesPlatformShowcase quoteById={quoteById} quotesStatus={quotesStatus} />

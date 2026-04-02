@@ -7,8 +7,9 @@ import type { MockFuturesSignal } from "@/lib/landing/mock-signals";
 import { formatFuturesPrice } from "@/lib/landing/format-quote";
 import { FuturesSquareIcon } from "@/components/landing/FuturesSquareIcon";
 
+/** Column dividers — match subscription app futures SignalCard */
 const COL_DIVIDER =
-  "relative after:pointer-events-none after:absolute after:right-0 after:top-1/4 after:h-1/2 after:w-px after:bg-gray-200 after:content-['']";
+  "relative after:pointer-events-none after:absolute after:right-0 after:top-1/4 after:h-1/2 after:w-px after:bg-[#e9e9eb] after:content-['']";
 
 function fmtUsd(sym: string, n: number) {
   return `$${formatFuturesPrice(sym, n)}`;
@@ -37,23 +38,20 @@ export function LandingSignalCard({ signal: s, className, insightText: insightTe
     ? "text-amber-600"
     : statusIsShort
       ? "text-red-500"
-      : "text-emerald-600";
-  const pulseOuterColor = monitoring ? "bg-amber-400" : statusIsShort ? "bg-red-400" : "bg-emerald-400";
-  const pulseInnerColor = monitoring ? "bg-amber-500" : statusIsShort ? "bg-red-500" : "bg-emerald-500";
+      : "text-[#04b488]";
+  const pulseOuterColor = monitoring ? "bg-amber-400" : statusIsShort ? "bg-red-400" : "bg-green-400";
+  const pulseInnerColor = monitoring ? "bg-amber-500" : statusIsShort ? "bg-red-500" : "bg-green-500";
 
   const insightText = (insightTextProp ?? s.reasoningLayers[0] ?? "").trim();
 
   return (
     <div
       className={cn(
-        "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-colors hover:border-gray-300",
+        "flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-[12px] border border-[#e9e9eb] bg-white shadow-none transition-colors hover:border-gray-300",
         className
       )}
     >
-      <span className="absolute right-3 top-3 z-10 bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-medium rounded-full px-2 py-0.5">
-        Demo
-      </span>
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-4 pb-3 pt-4 pr-16">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#e9e9eb] px-4 pb-3 pt-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <FuturesSquareIcon symbol={s.symbol} size={40} className="shrink-0" />
           <div className="min-w-0">
@@ -82,7 +80,7 @@ export function LandingSignalCard({ signal: s, className, insightText: insightTe
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 pt-4">
-        <div className="min-w-0 rounded-lg border border-gray-200/80 bg-gray-50/50">
+        <div className="min-w-0 rounded-lg border border-[#e9e9eb]/60 bg-white">
           <div className="grid min-w-0 grid-cols-3 gap-y-3 p-3">
             <div className={cn("min-w-0 space-y-1.5 pr-1 text-center sm:pr-2", COL_DIVIDER)}>
               <span className="block text-[9px] font-semibold uppercase tracking-widest text-gray-500">
@@ -100,13 +98,13 @@ export function LandingSignalCard({ signal: s, className, insightText: insightTe
             </div>
             <div className="min-w-0 space-y-1.5 pl-1 text-center sm:pl-2">
               <span className="block text-[9px] font-semibold uppercase tracking-widest text-emerald-600">Target</span>
-              <div className="break-words font-data text-[clamp(11px,2.4vw,13px)] font-bold leading-tight tracking-tight text-emerald-600">
+              <div className="break-words font-data text-[clamp(11px,2.4vw,13px)] font-bold leading-tight tracking-tight text-[#04b488]">
                 {targetDisplay}
               </div>
             </div>
           </div>
 
-          <div className="mx-3 border-t border-gray-200/60" />
+          <div className="mx-3 border-t border-[#e9e9eb]/50" />
 
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-2.5">
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-600">
@@ -125,7 +123,7 @@ export function LandingSignalCard({ signal: s, className, insightText: insightTe
               <span className="ml-1.5 text-[10px] font-medium text-gray-500">Setup {s.setupScore}</span>
             </div>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#e9e9eb]">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${s.confidence}%` }}
@@ -135,30 +133,22 @@ export function LandingSignalCard({ signal: s, className, insightText: insightTe
           </div>
         </div>
 
-        <div className="mt-auto flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div
+          className={cn(
+            "mt-auto flex gap-3 border-t border-[#e9e9eb]/60 pt-4",
+            insightText ? "flex-col sm:flex-row sm:items-start sm:justify-between" : "flex-row justify-end"
+          )}
+        >
           {insightText ? (
             <p className="min-w-0 flex-1 text-xs italic leading-relaxed text-gray-600 sm:line-clamp-3">{insightText}</p>
           ) : null}
-          <div
-            className={cn(
-              "flex shrink-0 flex-row items-center justify-end gap-2 sm:flex-col sm:items-end",
-              !insightText && "w-full sm:ml-auto sm:w-auto"
-            )}
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center self-end rounded-md border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:text-blue-600"
+            aria-label="Set alert"
           >
-            <button
-              type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:text-blue-600"
-              aria-label="Set alert"
-            >
-              <Bell className="h-4 w-4" strokeWidth={2} />
-            </button>
-            <a
-              href="#pricing"
-              className="inline-flex h-8 items-center whitespace-nowrap text-xs font-semibold text-blue-600 hover:underline"
-            >
-              View →
-            </a>
-          </div>
+            <Bell className="h-4 w-4" strokeWidth={2} />
+          </button>
         </div>
       </div>
     </div>
