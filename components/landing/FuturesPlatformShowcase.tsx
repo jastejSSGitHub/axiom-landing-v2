@@ -62,15 +62,44 @@ export function FuturesPlatformShowcase({
         <LandingWatchlistStrip quoteById={quoteById} status={quotesStatus} />
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
-        <LandingNewsFeed />
-        <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Prop firm risk calculator</p>
-          <p className="mb-4 text-sm text-gray-600">
-            Pick evaluation or funded, choose your firm and account size, and see contract count and dollar risk against
-            daily loss limits and drawdown — before you place the trade.
-          </p>
-          <LandingRiskCalculator symbol="GC" entry={entryMid} stop={stop} />
+      <div className="border-t border-gray-200/80">
+        <div className="flex flex-col gap-8 md:gap-10">
+          {/* News: white surface on warm page — keeps “Demo feed” row clearly below headlines, full-width row for label + link */}
+          <div className="w-full min-w-0 overflow-visible rounded-2xl border border-gray-200/80 bg-white p-5 pt-12 shadow-sm md:p-8 md:pt-14">
+            <div className="mb-8 text-left md:mb-10">
+              <div className="mb-4 text-xs font-data font-bold uppercase tracking-widest text-gray-500">
+                Market intelligence
+              </div>
+              <h2 className="mb-4 max-w-full text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
+                Markets move on news. Know the tone before the trade.
+              </h2>
+              <p className="w-full max-w-full text-pretty text-lg leading-relaxed text-gray-600 break-words sm:max-w-[560px]">
+                Every headline scored BULLISH, BEARISH, or NEUTRAL by AI — in real time. No spin. No noise. Just signal.
+              </p>
+            </div>
+            <div className="min-w-0">
+              <LandingNewsFeed />
+            </div>
+          </div>
+
+          {/* Calculator: slightly darker warm surface + extra space before the card */}
+          <div className="w-full min-w-0 rounded-2xl border border-gray-200/80 bg-[#EBE9E4] p-5 pt-12 md:p-8 md:pt-14">
+            <div className="mb-10 text-left md:mb-14">
+              <div className="mb-4 text-xs font-data font-bold uppercase tracking-widest text-gray-500">
+                Prop firm risk calculator
+              </div>
+              <h2 className="mb-4 max-w-full text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
+                Know your exact risk before you click buy.
+              </h2>
+              <p className="w-full max-w-full text-pretty text-lg leading-relaxed text-gray-600 break-words sm:max-w-[560px]">
+                Pick your firm, your account size, and your stop — Axiom tells you exactly how many contracts you can take
+                without breaking a single rule.
+              </p>
+            </div>
+            <div className="min-w-0">
+              <LandingRiskCalculator symbol="GC" entry={entryMid} stop={stop} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
