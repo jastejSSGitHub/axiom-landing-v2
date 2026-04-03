@@ -5,7 +5,7 @@ import { Bell, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MockFuturesSignal } from "@/lib/landing/mock-signals";
 import { formatFuturesPrice } from "@/lib/landing/format-quote";
-import { FuturesSquareIcon } from "@/components/landing/FuturesSquareIcon";
+import { FuturesIconAsset } from "@/components/landing/FuturesIconAsset";
 
 /** Column dividers — match subscription app futures SignalCard */
 const COL_DIVIDER =
@@ -53,7 +53,7 @@ export function LandingSignalCard({ signal: s, className, insightText: insightTe
     >
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#e9e9eb] px-4 pb-3 pt-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <FuturesSquareIcon symbol={s.symbol} size={40} className="shrink-0" />
+          <FuturesIconAsset symbol={s.symbol} size={40} className="shrink-0" />
           <div className="min-w-0">
             <span className="font-bold text-gray-900">{s.displayName}</span>
             <span className="text-gray-500"> · {s.symbol}</span>

@@ -3,14 +3,19 @@
 /* eslint-disable react/no-unescaped-entities -- body copy uses contractions and quoted phrases */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { Check, ArrowRight, Play, TrendingUp, TrendingDown, UploadCloud, Activity, PieChart, Phone, Box } from "lucide-react";
 import type { YahooQuote } from "@/lib/market-data/yahoo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AxiomScoreRow } from "@/lib/types/axiom-scores";
 import { FuturesPlatformShowcase } from "@/components/landing/FuturesPlatformShowcase";
+import { FuturesIconAsset } from "@/components/landing/FuturesIconAsset";
 import { LandingSignalCard } from "@/components/landing/LandingSignalCard";
-import { LANDING_FUTURES_SIGNALS, type MockFuturesSignal } from "@/lib/landing/mock-signals";
+import {
+  HERO_CRUDE_SIGNAL_SEED,
+  LANDING_FUTURES_SIGNALS,
+  type MockFuturesSignal,
+} from "@/lib/landing/mock-signals";
 
 const TICKER_API_SYMBOLS = [
   { sym: "NIFTY", label: "NIFTY 50" },
@@ -245,6 +250,20 @@ function CardContainer({ children, className = "" }: { children: React.ReactNode
   );
 }
 
+function HeroMockupGradientFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-[32px] p-4 sm:p-5 md:p-[22px]"
+      style={{
+        backgroundImage:
+          "linear-gradient(180deg, #E8F4FF 0%, #B4D7FC 35%, #4F8DEB 72%, #2563EB 100%)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function buildHeroGoldSignal(
   quoteById: Record<string, YahooQuote>,
   quotesStatus: QuotesStatus
@@ -264,15 +283,92 @@ function buildHeroGoldSignal(
   };
 }
 
+type HeroInstrumentId = "gold" | "nasdaq" | "crude";
+
+const HERO_INSTRUMENT_CYCLE: { id: HeroInstrumentId; ms: number }[] = [
+  { id: "gold", ms: 3000 },
+  { id: "nasdaq", ms: 3000 },
+  { id: "crude", ms: 3000 },
+];
+
+function useHeroInstrumentCycle(): HeroInstrumentId {
+  const [stepIndex, setStepIndex] = useState(0);
+  useEffect(() => {
+    const { ms } = HERO_INSTRUMENT_CYCLE[stepIndex];
+    const t = window.setTimeout(() => {
+      setStepIndex((i) => (i + 1) % HERO_INSTRUMENT_CYCLE.length);
+    }, ms);
+    return () => window.clearTimeout(t);
+  }, [stepIndex]);
+  return HERO_INSTRUMENT_CYCLE[stepIndex].id;
+}
+
+function nasdaqHeroSeed(): MockFuturesSignal {
+  const nq = LANDING_FUTURES_SIGNALS.find((s) => s.symbol === "NQ")!;
+  return {
+    ...nq,
+    direction: "LONG",
+    status: "ACTIVE",
+    confidence: 76,
+    setupScore: "B (3/5)",
+    reasoningLayers: [
+      "★ NQ reclaimed the NY open gap into value; order flow flipped bullish on 15m while prior support holds.",
+      ...nq.reasoningLayers.slice(1),
+    ],
+  };
+}
+
+function buildHeroCarouselSignal(
+  active: HeroInstrumentId,
+  quoteById: Record<string, YahooQuote>,
+  quotesStatus: QuotesStatus
+): MockFuturesSignal {
+  if (active === "gold") {
+    return buildHeroGoldSignal(quoteById, quotesStatus);
+  }
+  if (active === "nasdaq") {
+    const base = nasdaqHeroSeed();
+    const mnq = quoteById["MNQ=F"];
+    const ok = quotesStatus === "ok" && mnq && Number.isFinite(mnq.price);
+    if (!ok) return { ...base };
+    const live = mnq.price;
+    return {
+      ...base,
+      entryLow: live - 22,
+      entryHigh: live - 6,
+      stop: live - 95,
+      tp1: live + 78,
+      tp2: live + 155,
+      rr: 2,
+    };
+  }
+  const crudeBase = HERO_CRUDE_SIGNAL_SEED;
+  const cl = quoteById["CL=F"];
+  const ok = quotesStatus === "ok" && cl && Number.isFinite(cl.price);
+  if (!ok) return { ...crudeBase };
+  const live = cl.price;
+  return {
+    ...crudeBase,
+    entryLow: live - 0.48,
+    entryHigh: live + 0.12,
+    stop: live - 1.12,
+    tp1: live + 1.08,
+    tp2: live + 2.4,
+  };
+}
+
 function MockupHeroCard({
   quoteById,
   quotesStatus,
-  goldSignal,
 }: {
   quoteById: Record<string, YahooQuote>;
   quotesStatus: QuotesStatus;
-  goldSignal: MockFuturesSignal;
 }) {
+  const activeInstrument = useHeroInstrumentCycle();
+  const carouselSignal = useMemo(
+    () => buildHeroCarouselSignal(activeInstrument, quoteById, quotesStatus),
+    [activeInstrument, quoteById, quotesStatus]
+  );
   const gc = quoteById["GC=F"];
   const nq = quoteById["MNQ=F"];
   const bn = quoteById["BANKNIFTY"];
@@ -292,20 +388,33 @@ function MockupHeroCard({
     );
   };
 
-  const watchRow = (name: string, code: string, q: YahooQuote | undefined, active: boolean) => {
+  const watchRow = (
+    name: string,
+    code: string,
+    q: YahooQuote | undefined,
+    active: boolean,
+    iconSymbol: string
+  ) => {
     const loading = quotesStatus === "loading" && !q;
     const ch = q ? formatChangePct(q) : null;
     return (
-      <div
+      <motion.div
         key={name}
-        className={`p-3 rounded-xl border ${active ? "border-green-200 bg-green-50/30" : "border-gray-100 bg-white shadow-sm"}`}
+        layout
+        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+        className={`rounded-xl border p-3 transition-colors duration-500 ${
+          active ? "border-green-200 bg-green-50/30 shadow-[0_0_0_1px_rgba(74,222,128,0.35)]" : "border-gray-100 bg-white shadow-sm"
+        }`}
       >
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <div className="text-[11px] font-bold text-gray-900">{name}</div>
-            <div className="text-[9px] font-data text-gray-400 tracking-widest font-semibold">{code}</div>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-start gap-2">
+            <FuturesIconAsset symbol={iconSymbol} size={32} className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold text-gray-900">{name}</div>
+              <div className="text-[9px] font-data font-semibold tracking-widest text-gray-400">{code}</div>
+            </div>
           </div>
-          {active && <div className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse"></div>}
+          {active && <div className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#00E676]" />}
         </div>
         <div className="text-[13px] font-data font-semibold mb-0.5">
           {loading ? <span className="inline-block h-4 w-14 rounded bg-gray-200 animate-pulse" /> : q ? formatTickerPrice(q.id, q.price) : "—"}
@@ -325,20 +434,22 @@ function MockupHeroCard({
             "—"
           )}
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   return (
-    <motion.div
-      className="origin-center w-full max-w-[500px] hover:rotate-0 transition-transform duration-500 cursor-pointer"
-      initial={{ rotate: "1.5deg", y: 0 }}
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      style={{ rotate: "1.5deg" }}
-      whileHover={{ rotate: "0deg" }}
-    >
-      <CardContainer className="text-left w-full">
+    <div className="w-full max-w-[520px]">
+      <HeroMockupGradientFrame>
+        <motion.div
+          className="origin-center cursor-pointer transition-transform duration-500 ease-in-out"
+          initial={{ rotate: "1.5deg", y: 0 }}
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ rotate: "1.5deg" }}
+          whileHover={{ rotate: "0deg" }}
+        >
+        <CardContainer className="text-left w-full border border-white/50 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_20px_50px_rgba(0,0,0,0.12)]">
         {/* Ticker */}
         <div className="bg-[#0a0a0a] text-white flex overflow-hidden whitespace-nowrap h-8 items-center border-b border-gray-800">
           <motion.div
@@ -378,19 +489,31 @@ function MockupHeroCard({
             </div>
           </div>
 
-          {/* Watchlist */}
+          {/* Watchlist — selection follows hero carousel (Gold → NQ → CL) */}
           <div className="grid grid-cols-3 gap-3">
-            {watchRow("Gold", "COMEX", gc, true)}
-            {watchRow("Nasdaq 100", "CME", nq, false)}
-            {watchRow("Crude Oil", "NYMEX", cl, false)}
+            {watchRow("Gold", "COMEX", gc, activeInstrument === "gold", "GC")}
+            {watchRow("Nasdaq 100", "CME", nq, activeInstrument === "nasdaq", "NQ")}
+            {watchRow("Crude Oil", "NYMEX", cl, activeInstrument === "crude", "CL")}
           </div>
 
-          {/* Signal card — same layout as subscription trading app futures SignalCard */}
-          <LandingSignalCard signal={goldSignal} />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeInstrument}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="min-w-0"
+            >
+              <LandingSignalCard signal={carouselSignal} />
+            </motion.div>
+          </AnimatePresence>
 
         </div>
-      </CardContainer>
-    </motion.div>
+        </CardContainer>
+        </motion.div>
+      </HeroMockupGradientFrame>
+    </div>
   );
 }
 
@@ -852,7 +975,7 @@ export default function Home() {
             </div>
 
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-end relative perspective-[1000px]">
-               <MockupHeroCard quoteById={quoteById} quotesStatus={quotesStatus} goldSignal={heroGoldSignal} />
+               <MockupHeroCard quoteById={quoteById} quotesStatus={quotesStatus} />
             </div>
 
           </div>
@@ -980,7 +1103,11 @@ export default function Home() {
             </div>
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
                <FadeInSection delay={0.2}>
-                  <MockupScoreCard />
+                  <div className="w-full max-w-[524px]">
+                    <div className="rounded-[28px] bg-gradient-to-br from-[#cfe8ff] via-[#4a7eb8] to-[#0a1f3d] p-5 shadow-xl ring-1 ring-black/5 sm:p-7 md:p-8 [&>div]:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]">
+                      <MockupScoreCard />
+                    </div>
+                  </div>
                </FadeInSection>
             </div>
           </div>
@@ -994,18 +1121,26 @@ export default function Home() {
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
                <FadeInSection delay={0.2}>
                   <div className="w-full max-w-[500px]">
-                    <LandingSignalCard signal={heroGoldSignal} />
+                    <div className="rounded-[28px] bg-gradient-to-br from-[#7a3340] via-[#5c2430] to-[#2a0f14] p-5 shadow-xl ring-1 ring-black/5 sm:p-7 md:p-8">
+                      <LandingSignalCard
+                        signal={heroGoldSignal}
+                        className="shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]"
+                      />
+                    </div>
                   </div>
                </FadeInSection>
             </div>
             <div className="w-full lg:w-1/2">
                <FadeInSection>
                  <div className="text-xs font-data font-bold text-blue-600 tracking-widest uppercase mb-4">US Futures Signals</div>
-                 <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
+                 <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-start">
+                   <FuturesIconAsset symbol="GC" size={64} className="shrink-0 rounded-lg shadow-sm ring-1 ring-gray-200/80" />
+                   <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
                    Know the exact entry.
                    <br />
                    <span className="text-primary">Know exactly why.</span>
                  </h2>
+                 </div>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                    Every Axiom signal fires only when five independent confirmation layers align simultaneously. Structure. Liquidity. Displacement. Entry model. Risk parameters. 
                    <br/><br/>
@@ -1051,10 +1186,15 @@ export default function Home() {
                 Most prop traders blow accounts not from bad strategy — from bad timing. They see the setup after
                 it&apos;s already moved. They size wrong. They hold through a news spike.
               </p>
-              <p className="mx-auto text-gray-600 mb-12 max-w-2xl text-lg leading-relaxed">
+              <p className="mx-auto text-gray-600 mb-10 max-w-2xl text-lg leading-relaxed">
                 Axiom pre-computes your entry zone, stop, and two targets from five-layer confluence — before the candle
                 closes. You open the desk, you see the setup, you decide. That&apos;s it.
               </p>
+              <div className="mb-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+                <FuturesIconAsset symbol="GC" size={52} className="rounded-lg ring-1 ring-gray-200/70" />
+                <FuturesIconAsset symbol="NQ" size={52} className="rounded-lg ring-1 ring-gray-200/70" />
+                <FuturesIconAsset symbol="ES" size={52} className="rounded-lg ring-1 ring-gray-200/70" alt="S&P 500 futures" />
+              </div>
             </div>
           </FadeInSection>
           <FadeInSection delay={0.08}>

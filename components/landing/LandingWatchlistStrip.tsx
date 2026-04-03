@@ -3,7 +3,7 @@
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { YahooQuote } from "@/lib/market-data/yahoo";
-import { FuturesSquareIcon } from "@/components/landing/FuturesSquareIcon";
+import { FuturesIconAsset } from "@/components/landing/FuturesIconAsset";
 import { formatChangePctLabel, formatFuturesPrice } from "@/lib/landing/format-quote";
 
 type QuotesStatus = "loading" | "ok" | "error";
@@ -168,7 +168,7 @@ function WatchlistCard({
       </div>
       <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
         <div className="flex items-start gap-2.5">
-          <FuturesSquareIcon symbol={w.symbol} size={40} className="shrink-0" />
+          <FuturesIconAsset symbol={w.symbol} size={40} className="shrink-0" />
           <div className="min-w-0 flex-1 pr-6">
             <p className="text-sm font-bold text-gray-900">{w.displayName}</p>
             <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-gray-500">{w.exchange}</p>
@@ -245,13 +245,26 @@ export function LandingWatchlistStrip({
         Pin the contracts you trade most — live prices, session-aware quality, and signal state in one glance. After you
         sign up, your watchlist syncs across web and alerts.
       </p>
-      {/* Full viewport width so the row uses all horizontal space; inner padding matches page gutters */}
+      {/* Full viewport width — green gradient band behind the carousel (matches landing mock) */}
       <div
-        className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-6 lg:px-8"
+        className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden px-6 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] md:py-8 lg:px-8"
         role="region"
         aria-label="Futures watchlist, infinite horizontal marquee"
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.16) 0%,
+              rgba(255, 255, 255, 0.06) 22%,
+              rgba(255, 255, 255, 0) 42%,
+              rgba(255, 255, 255, 0) 58%,
+              rgba(0, 0, 0, 0.06) 100%
+            ),
+            linear-gradient(90deg, #9fe08a 0%, #5ec968 22%, #2fa85a 48%, #1d7a4a 74%, #0f4d32 100%)
+          `,
+        }}
       >
-        <div className="landing-watchlist-strip-viewport pb-2 pt-1">
+        <div className="landing-watchlist-strip-viewport pb-1 pt-0.5">
           <div className={cn("landing-watchlist-marquee flex flex-nowrap gap-3")}>
             <div className="flex shrink-0 gap-3">
               {WATCHLIST_ROWS.map((w) => (

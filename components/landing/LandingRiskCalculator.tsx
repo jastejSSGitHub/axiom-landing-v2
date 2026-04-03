@@ -3,8 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- ported from app RiskCalculator; effect-driven resets match production */
 /* eslint-disable @next/next/no-img-element -- firm favicons via Google s2; same as trading app */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ListboxSelect } from "@/components/landing/ui/ListboxSelect";
 import { PlainNumericInput } from "@/components/landing/ui/PlainNumericInput";
@@ -65,17 +64,36 @@ function planOptionShortLabel(label: string): string {
 
 type AccountKind = "personal" | "evaluation" | "funded";
 
+/** Firms cycled in landing autoplay after the initial Tradeify beat. */
+const DEMO_CYCLE_FIRMS: PropFirmId[] = ["lucid", "topstep", "alpha", "myfunded", "apex"];
+
+function computeLandingMaxRisk(
+  accountType: AccountKind,
+  selectedFirm: PropFirmId,
+  selectedPlanId: string
+): number {
+  if (accountType === "personal") return readFuturesMaxRiskDollars();
+  const limits = getPropPlanRiskLimits(selectedPlanId);
+  const mode = accountType === "evaluation" ? "evaluation" : "funded";
+  const plans = getPropAccountOptions(selectedFirm, mode);
+  const plan = plans.find((p) => p.id === selectedPlanId);
+  if (!limits || !plan) return 0;
+  let v =
+    accountType === "evaluation"
+      ? Math.floor(limits.maxDrawdownDollars * 0.06)
+      : Math.floor(limits.maxDrawdownDollars * 0.04);
+  if (accountType === "funded" && plan.rules.drawdownType === "intraday") {
+    v = Math.floor(v * 0.7);
+  }
+  return Math.max(0, v);
+}
+
 type Props = {
   symbol: string;
   entry?: number;
   stop?: number;
-};
-
-type WarningItem = {
-  id: string;
-  priority: number;
-  tone: "red" | "amber" | "yellow" | "green";
-  message: string;
+  /** When true (default), funded + Tradeify demo with automatic firm/plan/risk animation; inputs are non-interactive. */
+  autoDemo?: boolean;
 };
 
 type RuleChipTone =
@@ -128,27 +146,23 @@ function RuleChip({
   );
 }
 
-export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
+export function LandingRiskCalculator({ symbol, entry, stop, autoDemo = true }: Props) {
   const symU = symbol.toUpperCase();
   const instr = useMemo(() => getRiskInstrumentMath(symU), [symU]);
   const headerLine = useMemo(() => formatInstrumentHeaderLine(instr), [instr]);
 
-  const [accountType, setAccountType] = useState<AccountKind>("personal");
+  const [accountType, setAccountType] = useState<AccountKind>(() => (autoDemo ? "funded" : "personal"));
   const [selectedFirm, setSelectedFirm] = useState<PropFirmId>("tradeify");
-  const [selectedPlanId, setSelectedPlanId] = useState(() => getDefaultPlanId("tradeify", "evaluation"));
-  const [maxRisk, setMaxRisk] = useState(() => readFuturesMaxRiskDollars());
+  const [selectedPlanId, setSelectedPlanId] = useState(() =>
+    autoDemo ? getDefaultPlanId("tradeify", "funded") : getDefaultPlanId("tradeify", "evaluation")
+  );
+  const [maxRisk, setMaxRisk] = useState(() =>
+    autoDemo
+      ? computeLandingMaxRisk("funded", "tradeify", getDefaultPlanId("tradeify", "funded"))
+      : readFuturesMaxRiskDollars()
+  );
   const [dllUsedToday, setDllUsedToday] = useState("");
-  const [qualifyingDays, setQualifyingDays] = useState(0);
   const [todaysPnL, setTodaysPnL] = useState("");
-  const [dismissedWarnings, setDismissedWarnings] = useState<string[]>([]);
-
-  const dismiss = useCallback((id: string) => {
-    setDismissedWarnings((prev) => (prev.includes(id) ? prev : [...prev, id]));
-  }, []);
-
-  useEffect(() => {
-    setDismissedWarnings([]);
-  }, [accountType, selectedPlanId, selectedFirm]);
 
   useEffect(() => {
     if (accountType === "personal") {
@@ -162,10 +176,11 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
   });
 
   useEffect(() => {
+    if (autoDemo) return;
     if (entry != null && stop != null) {
       setStopPoints(Math.abs(entry - stop));
     }
-  }, [entry, stop]);
+  }, [entry, stop, autoDemo]);
 
   const propMode = accountType === "personal" ? null : accountType;
 
@@ -196,21 +211,66 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
   }, [planOptions, selectedPlanId]);
 
   useEffect(() => {
+    if (autoDemo) return;
     if (accountType === "personal") return;
-    const limits = getPropPlanRiskLimits(selectedPlanId);
-    const mode = accountType === "evaluation" ? "evaluation" : "funded";
-    const plans = getPropAccountOptions(selectedFirm, mode);
-    const plan = plans.find((p) => p.id === selectedPlanId);
-    if (!limits || !plan) return;
-    let v =
-      accountType === "evaluation"
-        ? Math.floor(limits.maxDrawdownDollars * 0.06)
-        : Math.floor(limits.maxDrawdownDollars * 0.04);
-    if (accountType === "funded" && plan.rules.drawdownType === "intraday") {
-      v = Math.floor(v * 0.7);
-    }
-    setMaxRisk(Math.max(0, v));
-  }, [accountType, selectedPlanId, selectedFirm]);
+    setMaxRisk(computeLandingMaxRisk(accountType, selectedFirm, selectedPlanId));
+  }, [accountType, selectedPlanId, selectedFirm, autoDemo]);
+
+  useEffect(() => {
+    if (!autoDemo) return;
+    let cancelled = false;
+    const pending: ReturnType<typeof setTimeout>[] = [];
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const t = setTimeout(() => {
+          if (!cancelled) resolve();
+        }, ms);
+        pending.push(t);
+      });
+
+    let cycleIndex = 0;
+    (async () => {
+      while (!cancelled) {
+        await delay(2800);
+        if (cancelled) return;
+
+        for (let i = 0; i < DEMO_CYCLE_FIRMS.length; i++) {
+          if (cancelled) return;
+          const firmId = DEMO_CYCLE_FIRMS[i]!;
+          setSelectedFirm(firmId);
+          setSelectedPlanId(getDefaultPlanId(firmId, "funded"));
+          await delay(780);
+          if (cancelled) return;
+
+          const plans = getPropAccountOptions(firmId, "funded");
+          if (!plans.length) continue;
+          const alt = plans[Math.min(1, plans.length - 1)]!;
+          setSelectedPlanId(alt.id);
+          await delay(820);
+          if (cancelled) return;
+
+          const base = computeLandingMaxRisk("funded", firmId, alt.id);
+          const bump = ((cycleIndex + i) % 4) * 18 - 24;
+          setMaxRisk(Math.max(40, base + bump));
+
+          const step = instr.tickSizePoints > 0 ? instr.tickSizePoints : 1;
+          setStopPoints((sp) => {
+            const delta = (cycleIndex + i) % 2 === 0 ? step * 2 : -step * 2;
+            return Math.max(step, sp + delta);
+          });
+
+          await delay(2400);
+          if (cancelled) return;
+        }
+        cycleIndex += 1;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      pending.forEach(clearTimeout);
+    };
+  }, [autoDemo, instr.tickSizePoints]);
 
   const tickSize = instr.tickSizePoints;
   const ticks = useMemo(() => {
@@ -219,9 +279,16 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
   }, [stopPoints, tickSize]);
 
   const riskPerContract = ticks * instr.dollarsPerTick;
+
+  /** Demo autoplay: keep at least 1 contract so tiles never sit at 0 / $0 when stop distance is wide vs. prop-derived max risk. */
+  useLayoutEffect(() => {
+    if (!autoDemo) return;
+    if (riskPerContract <= 0) return;
+    setMaxRisk((prev) => (prev < riskPerContract ? riskPerContract : prev));
+  }, [autoDemo, riskPerContract]);
+
   const contracts = riskPerContract > 0 ? Math.floor(maxRisk / riskPerContract) : 0;
   const totalRiskDollars = contracts * riskPerContract;
-  const wideStop = contracts < 1 && riskPerContract > 0 && maxRisk > 0;
 
   const showPropUi = accountType !== "personal";
   const rules = selectedPlan?.rules;
@@ -232,9 +299,6 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
     dllLimit != null && dllLimit > 0 ? Math.max(0, dllLimit - dllUsedNum) : null;
   const remainingDllPct = remainingDll != null && dllLimit != null && dllLimit > 0 ? remainingDll / dllLimit : null;
 
-  const exceedsDll = dllLimit != null && maxRisk > dllLimit;
-  const exceedsTenPctDd =
-    riskLimits != null && maxRisk > riskLimits.maxDrawdownDollars * 0.1;
   const fundedIntraday = accountType === "funded" && selectedPlan?.rules.drawdownType === "intraday";
 
   const todaysPnLNum = todaysPnL === "" ? null : Number(todaysPnL);
@@ -261,72 +325,6 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
     return null;
   }, [todaysPnLNum, consistencyPct, riskLimits, accountType]);
 
-  const warnings = useMemo((): WarningItem[] => {
-    const out: WarningItem[] = [];
-    if (showPropUi && riskLimits) {
-      if (exceedsDll) {
-        out.push({
-          id: "dll-hard",
-          priority: 1,
-          tone: "red",
-          message: "🚨 Exceeds daily loss limit — this trade would violate your account rules",
-        });
-      }
-      if (exceedsTenPctDd && !exceedsDll) {
-        out.push({
-          id: "dd-soft",
-          priority: 2,
-          tone: "amber",
-          message: "⚠️ Risk exceeds 10% of your drawdown — consider reducing",
-        });
-      }
-      if (fundedIntraday) {
-        out.push({
-          id: "intraday-dd",
-          priority: 3,
-          tone: "amber",
-          message: "🟠 Intraday DD — reduce size 30%",
-        });
-      }
-    }
-    if (wideStop && riskPerContract > 0) {
-      out.push({
-        id: "wide-stop",
-        priority: 4,
-        tone: "yellow",
-        message: "🟡 Stop wide for max risk — fewer than 1 contract possible",
-      });
-    }
-    const noBlock =
-      showPropUi &&
-      riskLimits &&
-      !exceedsDll &&
-      !exceedsTenPctDd &&
-      maxRisk > 0 &&
-      (!dllLimit || maxRisk <= dllLimit);
-    if (noBlock) {
-      out.push({
-        id: "rules-ok",
-        priority: 5,
-        tone: "green",
-        message: "🟢 ✓ Within prop firm rules",
-      });
-    }
-    return out.sort((a, b) => a.priority - b.priority);
-  }, [
-    showPropUi,
-    riskLimits,
-    exceedsDll,
-    exceedsTenPctDd,
-    fundedIntraday,
-    wideStop,
-    riskPerContract,
-    maxRisk,
-    dllLimit,
-  ]);
-
-  const visibleWarnings = warnings.filter((w) => !dismissedWarnings.includes(w.id));
-
   const stopTileValue =
     instr.stopUnit === "oz"
       ? `${stopPoints.toFixed(2)}/oz`
@@ -338,13 +336,18 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
   const r2 = contracts * riskPerContract * 2;
   const r3 = contracts * riskPerContract * 3;
 
-  const minQual = riskLimits?.qualifyingDayMinProfitDollars;
-
   const pillInactive =
     "rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900";
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-sm">
+    <div
+      className={cn(
+        "rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-sm",
+        autoDemo && "pointer-events-none select-none"
+      )}
+      role="region"
+      aria-label={autoDemo ? "Risk calculator demo — values update automatically" : "Risk calculator"}
+    >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-3">
         <div>
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-500">Risk calculator</h2>
@@ -358,6 +361,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
+              disabled={autoDemo}
               onClick={() => setAccountType("personal")}
               className={cn(
                 pillInactive,
@@ -368,6 +372,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
             </button>
             <button
               type="button"
+              disabled={autoDemo}
               onClick={() => setAccountType("evaluation")}
               className={cn(
                 pillInactive,
@@ -378,6 +383,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
             </button>
             <button
               type="button"
+              disabled={autoDemo}
               onClick={() => setAccountType("funded")}
               className={cn(
                 pillInactive,
@@ -401,9 +407,11 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
                     <button
                       key={f.id}
                       type="button"
+                      disabled={autoDemo}
                       onClick={() => setSelectedFirm(f.id)}
                       className={cn(
                         "flex min-w-[72px] shrink-0 flex-col items-center rounded-lg border py-2 px-2 text-center transition-colors",
+                        autoDemo && "duration-500 ease-out",
                         active
                           ? "border-2 border-blue-500 bg-blue-50"
                           : "border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
@@ -434,6 +442,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
                 value={selectedPlan?.id ?? planSelectOptions[0]?.value ?? ""}
                 onChange={setSelectedPlanId}
                 options={planSelectOptions}
+                disabled={autoDemo}
               />
             </div>
 
@@ -513,6 +522,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
               min={0}
               step={10}
               integerOnly
+              disabled={autoDemo}
             />
           </div>
 
@@ -525,6 +535,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
                 onChange={setDllUsedToday}
                 placeholder="0"
                 min={0}
+                disabled={autoDemo}
               />
             </label>
           ) : null}
@@ -539,6 +550,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
               onChange={(n) => setStopPoints(Math.max(0, n))}
               min={0}
               step={tickSize > 0 ? tickSize : 1}
+              disabled={autoDemo}
             />
           </div>
         </div>
@@ -562,43 +574,6 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
           </div>
         )}
 
-        {accountType === "funded" && (
-          <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">Days to payout</p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <label className="sr-only" htmlFor="qual-days">
-                Qualifying days logged
-              </label>
-              <StepperNumberInput
-                id="qual-days"
-                className="max-w-[10rem]"
-                value={qualifyingDays}
-                onChange={(n) => setQualifyingDays(Math.min(5, Math.max(0, n)))}
-                min={0}
-                max={5}
-                step={1}
-                integerOnly
-              />
-              <span className="text-xs text-gray-600">/ 5 qualifying days</span>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-200">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-[width]"
-                style={{ width: `${Math.min(100, (qualifyingDays / 5) * 100)}%` }}
-              />
-            </div>
-            <p className="mt-2 text-[11px] text-gray-500">
-              {minQual != null ? (
-                <>
-                  Need <span className="font-data font-semibold text-gray-900">${minQual}+</span> to count today
-                </>
-              ) : (
-                "Minimum qualifying profit — see firm rules"
-              )}
-            </p>
-          </div>
-        )}
-
         {showPropUi && consistencyPct != null && (
           <label className="block">
             <span className="text-xs font-semibold text-gray-500">Today&apos;s P&amp;L ($)</span>
@@ -608,6 +583,7 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
               onChange={setTodaysPnL}
               placeholder="0"
               inputMode="decimal"
+              disabled={autoDemo}
             />
             {consistencyMessage && (
               <p
@@ -684,33 +660,6 @@ export function LandingRiskCalculator({ symbol, entry, stop }: Props) {
             </div>
           ) : null}
         </div>
-
-        {visibleWarnings.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {visibleWarnings.map((w) => (
-              <div
-                key={w.id}
-                className={cn(
-                  "flex items-start gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium",
-                  w.tone === "red" && "border-red-200 bg-red-50 text-red-700",
-                  w.tone === "amber" && "border-amber-200 bg-amber-50 text-amber-800",
-                  w.tone === "yellow" && "border-amber-200 bg-amber-50 text-amber-800",
-                  w.tone === "green" && "border-green-200 bg-green-50 text-green-700"
-                )}
-              >
-                <span className="min-w-0 flex-1 leading-snug">{w.message}</span>
-                <button
-                  type="button"
-                  onClick={() => dismiss(w.id)}
-                  className="shrink-0 rounded p-0.5 text-gray-500 hover:bg-black/5 hover:text-gray-900"
-                  aria-label={`Dismiss: ${w.message}`}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -2,10 +2,15 @@
   "name": "axiom-landing-v2",
   "version": "0.1.0",
   "private": true,
+  "description": "Landing v2 dev server: npm run dev → http://localhost:3030 (port 3000 is for the Axiom subscription app).",
   "scripts": {
-    "dev": "next dev",
+    "dev:unlock": "node -e \"try{require('fs').unlinkSync('.next/dev/lock')}catch(e){}\"",
+    "dev": "next dev -H 0.0.0.0 -p 3030",
+    "dev:host": "next dev -H 0.0.0.0 -p 3030",
+    "dev:alt": "next dev -H 0.0.0.0 -p 3020",
     "build": "next build",
     "start": "next start",
+    "start:local": "next start -H 0.0.0.0 -p 3030",
     "lint": "eslint"
   },
   "dependencies": {

@@ -91,3 +91,29 @@ export const LANDING_FUTURES_SIGNALS: MockFuturesSignal[] = [
     circuitBreaker: "Abort monitor if ES reclaims 5,320 on a closing 15m basis.",
   },
 ];
+
+/** Hero mockup carousel only — not part of the 3-card futures showcase grid */
+export const HERO_CRUDE_SIGNAL_SEED: MockFuturesSignal = {
+  id: "sig-cl-hero",
+  symbol: "CL",
+  displayName: "Crude Oil",
+  direction: "LONG",
+  status: "ACTIVE",
+  entryLow: 74.5,
+  entryHigh: 75.05,
+  stop: 73.55,
+  tp1: 76.35,
+  tp2: 77.9,
+  rr: 2.2,
+  confidence: 71,
+  session: "NY Core",
+  setupScore: "A (4/5)",
+  reasoningLayers: [
+    "★ Weekly inventory draw plus OPEC tone priced a demand floor. CL holding above prior day VAH — continuation lean.",
+    "Layer 2 — Liquidity: Equal highs above; sell-side liquidity likely run on push.",
+    "Layer 3 — Displacement: 1H bullish FVG after inventory.",
+    "Layer 4 — Entry: 15m OB confluence with daily POC.",
+    "Layer 5 — Risk: Stop below structural low; R:R > 2:1 to opposing liquidity.",
+  ],
+  circuitBreaker: "Invalidate if CL loses 73.20 on a closing 1H basis.",
+};

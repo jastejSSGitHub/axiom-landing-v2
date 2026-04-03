@@ -51,10 +51,12 @@ export function FuturesPlatformShowcase({
           Not a vague &quot;go long here.&quot; A specific entry zone, stop, and two targets — pre-computed from five
           layers of confluence before the candle closes.
         </p>
-        <div className="grid gap-6 text-left lg:grid-cols-3">
-          {signals.map((s) => (
-            <LandingSignalCard key={s.id} signal={s} />
-          ))}
+        <div className="mx-auto w-full max-w-6xl rounded-[28px] bg-gradient-to-br from-[#cfe8ff] via-[#4a7eb8] to-[#0a1f3d] p-5 shadow-xl ring-1 ring-black/5 sm:p-7 md:p-8">
+          <div className="grid gap-6 text-left lg:grid-cols-3 [&>div]:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]">
+            {signals.map((s) => (
+              <LandingSignalCard key={s.id} signal={s} />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -64,16 +66,18 @@ export function FuturesPlatformShowcase({
 
       <div className="border-t border-gray-200/80">
         <div className="flex flex-col gap-8 md:gap-10">
-          {/* News: white surface on warm page — keeps “Demo feed” row clearly below headlines, full-width row for label + link */}
+          {/* News: white surface on warm page */}
           <div className="w-full min-w-0 overflow-visible rounded-2xl border border-gray-200/80 bg-white p-5 pt-12 shadow-sm md:p-8 md:pt-14">
             <div className="mb-8 text-left md:mb-10">
               <div className="mb-4 text-xs font-data font-bold uppercase tracking-widest text-gray-500">
                 Market intelligence
               </div>
               <h2 className="mb-4 max-w-full text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
-                Markets move on news. Know the tone before the trade.
+                <span className="text-blue-600">Markets move on news.</span>
+                <br />
+                Know the tone before the trade.
               </h2>
-              <p className="w-full max-w-full text-pretty text-lg leading-relaxed text-gray-600 break-words sm:max-w-[560px]">
+              <p className="w-full max-w-none text-lg leading-relaxed text-gray-600 whitespace-nowrap overflow-x-auto [scrollbar-width:thin]">
                 Every headline scored BULLISH, BEARISH, or NEUTRAL by AI — in real time. No spin. No noise. Just signal.
               </p>
             </div>
