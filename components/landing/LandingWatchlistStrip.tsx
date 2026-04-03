@@ -247,7 +247,7 @@ export function LandingWatchlistStrip({
       </p>
       {/* Full viewport width — green gradient band behind the carousel (matches landing mock) */}
       <div
-        className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden px-6 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] md:py-8 lg:px-8"
+        className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] md:py-8"
         role="region"
         aria-label="Futures watchlist, infinite horizontal marquee"
         style={{

@@ -1133,14 +1133,11 @@ export default function Home() {
             <div className="w-full lg:w-1/2">
                <FadeInSection>
                  <div className="text-xs font-data font-bold text-blue-600 tracking-widest uppercase mb-4">US Futures Signals</div>
-                 <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-start">
-                   <FuturesIconAsset symbol="GC" size={64} className="shrink-0 rounded-lg shadow-sm ring-1 ring-gray-200/80" />
-                   <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
+                 <h2 className="mb-6 text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
                    Know the exact entry.
                    <br />
                    <span className="text-primary">Know exactly why.</span>
                  </h2>
-                 </div>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                    Every Axiom signal fires only when five independent confirmation layers align simultaneously. Structure. Liquidity. Displacement. Entry model. Risk parameters. 
                    <br/><br/>
@@ -1186,15 +1183,10 @@ export default function Home() {
                 Most prop traders blow accounts not from bad strategy — from bad timing. They see the setup after
                 it&apos;s already moved. They size wrong. They hold through a news spike.
               </p>
-              <p className="mx-auto text-gray-600 mb-10 max-w-2xl text-lg leading-relaxed">
+              <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
                 Axiom pre-computes your entry zone, stop, and two targets from five-layer confluence — before the candle
                 closes. You open the desk, you see the setup, you decide. That&apos;s it.
               </p>
-              <div className="mb-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-                <FuturesIconAsset symbol="GC" size={52} className="rounded-lg ring-1 ring-gray-200/70" />
-                <FuturesIconAsset symbol="NQ" size={52} className="rounded-lg ring-1 ring-gray-200/70" />
-                <FuturesIconAsset symbol="ES" size={52} className="rounded-lg ring-1 ring-gray-200/70" alt="S&P 500 futures" />
-              </div>
             </div>
           </FadeInSection>
           <FadeInSection delay={0.08}>
