@@ -291,16 +291,49 @@ const HERO_INSTRUMENT_CYCLE: { id: HeroInstrumentId; ms: number }[] = [
   { id: "crude", ms: 3000 },
 ];
 
-function useHeroInstrumentCycle(): HeroInstrumentId {
-  const [stepIndex, setStepIndex] = useState(0);
+/** Below Tailwind `sm` (640px): header mock shows only GC + NQ and toggles between them. */
+const HERO_INSTRUMENT_CYCLE_MOBILE: { id: HeroInstrumentId; ms: number }[] = [
+  { id: "gold", ms: 3000 },
+  { id: "nasdaq", ms: 3000 },
+];
+
+function useHeroMockupCompact(): boolean {
+  const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const { ms } = HERO_INSTRUMENT_CYCLE[stepIndex];
+    const mq = window.matchMedia("(max-width: 639px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return compact;
+}
+
+function heroCycleIndex(stepIndex: number, isMobileTwoUp: boolean): number {
+  const list = isMobileTwoUp ? HERO_INSTRUMENT_CYCLE_MOBILE : HERO_INSTRUMENT_CYCLE;
+  if (isMobileTwoUp && stepIndex >= list.length) return 0;
+  return Math.min(stepIndex, list.length - 1);
+}
+
+function useHeroInstrumentCycle(isMobileTwoUp: boolean): HeroInstrumentId {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const list = isMobileTwoUp ? HERO_INSTRUMENT_CYCLE_MOBILE : HERO_INSTRUMENT_CYCLE;
+    const idx = heroCycleIndex(stepIndex, isMobileTwoUp);
+    const { ms } = list[idx];
     const t = window.setTimeout(() => {
-      setStepIndex((i) => (i + 1) % HERO_INSTRUMENT_CYCLE.length);
+      setStepIndex((i) => {
+        const L = isMobileTwoUp ? HERO_INSTRUMENT_CYCLE_MOBILE : HERO_INSTRUMENT_CYCLE;
+        const cur = heroCycleIndex(i, isMobileTwoUp);
+        return (cur + 1) % L.length;
+      });
     }, ms);
     return () => window.clearTimeout(t);
-  }, [stepIndex]);
-  return HERO_INSTRUMENT_CYCLE[stepIndex].id;
+  }, [stepIndex, isMobileTwoUp]);
+
+  const list = isMobileTwoUp ? HERO_INSTRUMENT_CYCLE_MOBILE : HERO_INSTRUMENT_CYCLE;
+  return list[heroCycleIndex(stepIndex, isMobileTwoUp)].id;
 }
 
 function nasdaqHeroSeed(): MockFuturesSignal {
@@ -364,7 +397,8 @@ function MockupHeroCard({
   quoteById: Record<string, YahooQuote>;
   quotesStatus: QuotesStatus;
 }) {
-  const activeInstrument = useHeroInstrumentCycle();
+  const heroCompact = useHeroMockupCompact();
+  const activeInstrument = useHeroInstrumentCycle(heroCompact);
   const carouselSignal = useMemo(
     () => buildHeroCarouselSignal(activeInstrument, quoteById, quotesStatus),
     [activeInstrument, quoteById, quotesStatus]
@@ -489,11 +523,13 @@ function MockupHeroCard({
             </div>
           </div>
 
-          {/* Watchlist — selection follows hero carousel (Gold → NQ → CL) */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Watchlist — mobile: GC + NQ only, animates GC ↔ NQ; sm+: adds CL */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {watchRow("Gold", "COMEX", gc, activeInstrument === "gold", "GC")}
             {watchRow("Nasdaq 100", "CME", nq, activeInstrument === "nasdaq", "NQ")}
-            {watchRow("Crude Oil", "NYMEX", cl, activeInstrument === "crude", "CL")}
+            <div className="hidden sm:block">
+              {watchRow("Crude Oil", "NYMEX", cl, activeInstrument === "crude", "CL")}
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
