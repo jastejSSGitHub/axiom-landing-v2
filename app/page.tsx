@@ -4,7 +4,19 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
-import { Check, ArrowRight, Play, TrendingUp, TrendingDown, UploadCloud, Activity, PieChart, Phone, Box } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  Box,
+  Brain,
+  Check,
+  FileText,
+  PieChart,
+  Phone,
+  TrendingDown,
+  TrendingUp,
+  Upload,
+} from "lucide-react";
 import type { YahooQuote } from "@/lib/market-data/yahoo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AxiomScoreRow } from "@/lib/types/axiom-scores";
@@ -345,7 +357,7 @@ function nasdaqHeroSeed(): MockFuturesSignal {
     confidence: 76,
     setupScore: "B (3/5)",
     reasoningLayers: [
-      "★ NQ reclaimed the NY open gap into value; order flow flipped bullish on 15m while prior support holds.",
+      "NQ reclaimed the NY open gap into the value area. Order flow flipped bullish on the 15m. Lean long while 24,100 holds.",
       ...nq.reasoningLayers.slice(1),
     ],
   };
@@ -910,15 +922,15 @@ export default function Home() {
               AXIOM
             </div>
             <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-gray-600">
-              <a href="#platform" className="hover:text-primary transition-colors">Platform</a>
-              <a href="#score" className="hover:text-primary transition-colors">Equities</a>
-              <a href="#futures" className="hover:text-primary transition-colors">Futures</a>
+              <a href="#features" className="hover:text-primary transition-colors">Features</a>
+              <a href="#markets" className="hover:text-primary transition-colors">Markets</a>
               <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
+              <a href="#pro-analysis" className="hover:text-primary transition-colors">Pro Analysis</a>
             </nav>
             <div className="flex items-center gap-4">
-              <a href="#" className="hidden md:block text-sm font-medium text-gray-600 hover:text-gray-900">Log in</a>
+              <a href="#" className="hidden md:block text-sm font-medium text-gray-600 hover:text-gray-900">Sign in</a>
               <button className="bg-primary hover:bg-blue-800 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20">
-                Start Free
+                Start free →
               </button>
             </div>
           </div>
@@ -948,15 +960,15 @@ export default function Home() {
             AXIOM
           </div>
           <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-gray-600">
-            <a href="#platform" className="hover:text-primary transition-colors">Platform</a>
-            <a href="#score" className="hover:text-primary transition-colors">Equities</a>
-            <a href="#futures" className="hover:text-primary transition-colors">Futures</a>
+            <a href="#features" className="hover:text-primary transition-colors">Features</a>
+            <a href="#markets" className="hover:text-primary transition-colors">Markets</a>
             <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
+            <a href="#pro-analysis" className="hover:text-primary transition-colors">Pro Analysis</a>
           </nav>
           <div className="flex items-center gap-4">
-            <a href="#" className="hidden md:block text-sm font-medium text-gray-600 hover:text-gray-900">Log in</a>
+            <a href="#" className="hidden md:block text-sm font-medium text-gray-600 hover:text-gray-900">Sign in</a>
             <button className="bg-primary hover:bg-blue-800 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20">
-              Start Free
+              Start free →
             </button>
           </div>
         </div>
@@ -980,32 +992,29 @@ export default function Home() {
               >
                 <motion.div variants={fadeUpVariant} className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold font-data tracking-widest uppercase shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                  Institutional Intelligence. No Broker. No BS.
+                  Built by traders. For traders. Not for their brokers.
                 </motion.div>
                 
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 leading-[1.05] mb-6">
-                   <motion.span variants={fadeUpVariant} className="block">Stop trusting</motion.span>
-                   <motion.span variants={fadeUpVariant} className="block">strangers with</motion.span>
-                   <motion.span variants={fadeUpVariant} className="block text-primary">your money.</motion.span>
+                   <motion.span variants={fadeUpVariant} className="block">The edge your broker doesn&apos;t want</motion.span>
+                   <motion.span variants={fadeUpVariant} className="block text-primary">you to have.</motion.span>
                 </h1>
                 
                 <motion.p variants={fadeUpVariant} className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
-                  Axiom gives you the same research tools used by professional fund managers — for Indian equities, US futures, and everything in between. No cold calls. No referral commissions. No hidden agendas.
+                  Axiom scores every Indian stock and fires live US futures signals — with full reasoning, zero commissions, and no one on the other end earning a cut of your loss.
                 </motion.p>
                 
                 <motion.div variants={fadeUpVariant} className="flex flex-col sm:flex-row gap-4 mb-4">
                   <button className="bg-primary hover:bg-blue-800 text-white px-8 py-4 rounded-full text-base font-medium transition-transform hover:scale-[1.02] shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2">
-                    ⚡ Start free — no card needed
+                    Start free — no card needed
                   </button>
                   <button className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 px-8 py-4 rounded-full text-base font-medium transition-all hover:border-gray-300 flex items-center justify-center gap-2 shadow-sm">
-                    Watch 2-min demo <ArrowRight className="w-4 h-4" />
+                    See a live signal <ArrowRight className="w-4 h-4" />
                   </button>
                 </motion.div>
                 
                 <motion.div variants={fadeUpVariant} className="text-[13px] font-medium text-gray-500 flex flex-wrap gap-x-4 gap-y-2">
-                  <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500" /> Free to start</span>
-                  <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500" /> No credit card</span>
-                  <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500" /> Cancel anytime</span>
+                  <span>Free forever · No broker · No hidden fees · Data never sold</span>
                 </motion.div>
               </motion.div>
             </div>
@@ -1039,13 +1048,13 @@ export default function Home() {
              <FadeInSection delay={0.2}>
                <div className="px-4 md:pl-8">
                  <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1">13</div>
-                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">13 instruments covered</div>
+                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">US futures instruments</div>
                </div>
              </FadeInSection>
              <FadeInSection delay={0.3}>
                <div className="px-4 md:pl-8">
                  <div className="text-3xl lg:text-4xl font-data font-bold tracking-tighter text-gray-900 mb-1">5-Layer</div>
-                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">5-Layer signal confirmation</div>
+                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Signal reasoning</div>
                </div>
              </FadeInSection>
              <FadeInSection delay={0.4}>
@@ -1069,8 +1078,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <FadeInSection>
             <div className="max-w-2xl mx-auto text-center mb-16">
-              <div className="text-xs font-data font-bold text-gray-400 tracking-widest uppercase mb-4">The problem with 'tips'</div>
-              <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6">Your broker isn't working for you.</h2>
+              <div className="text-xs font-data font-bold text-gray-400 tracking-widest uppercase mb-4">Why most traders stay broke</div>
+              <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6">The game is rigged. Here&apos;s how.</h2>
             </div>
           </FadeInSection>
 
@@ -1080,8 +1089,8 @@ export default function Home() {
                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-900 mb-6">
                    <Phone className="w-6 h-6" strokeWidth={1.75} aria-hidden />
                  </div>
-                 <h3 className="text-xl font-bold mb-3">The cold call</h3>
-                 <p className="text-gray-600 leading-relaxed text-sm">An unknown number calls. He has a 'hot tip.' He earns commission whether you make money or not. You have no idea how he derived the signal. You're trading blind.</p>
+                 <h3 className="text-xl font-bold mb-3">The broker tip</h3>
+                 <p className="text-gray-600 leading-relaxed text-sm">He gets paid whether you win or lose. Your broker earns commission on the trade, not the outcome. His incentive is volume. Yours is profit. Those are not the same thing.</p>
               </div>
             </FadeInSection>
             <FadeInSection delay={0.2}>
@@ -1089,8 +1098,8 @@ export default function Home() {
                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-[#229ED9] mb-6">
                    <TelegramLogoIcon className="w-6 h-6" />
                  </div>
-                 <h3 className="text-xl font-bold mb-3">The Telegram group</h3>
-                 <p className="text-gray-600 leading-relaxed text-sm">500 members receive the same signal at the same time. By the time you act, the operator has already exited. You're the exit liquidity.</p>
+                 <h3 className="text-xl font-bold mb-3">The Telegram signal</h3>
+                 <p className="text-gray-600 leading-relaxed text-sm">By the time you read it, he&apos;s already out. 500 people get the same message simultaneously. The sender entered yesterday. You&apos;re not getting alpha — you&apos;re providing the exit liquidity.</p>
               </div>
             </FadeInSection>
             <FadeInSection delay={0.3}>
@@ -1098,42 +1107,70 @@ export default function Home() {
                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-900 mb-6">
                    <Box className="w-6 h-6" strokeWidth={1.75} aria-hidden />
                  </div>
-                 <h3 className="text-xl font-bold mb-3">The black box tip</h3>
-                 <p className="text-gray-600 leading-relaxed text-sm">No reasoning. No data. No accountability. Just 'trust me.' When it fails — and it will — there's no explanation. Just silence.</p>
+                 <h3 className="text-xl font-bold mb-3">The black box</h3>
+                 <p className="text-gray-600 leading-relaxed text-sm">No logic. No accountability. No refund. &quot;Trust the process&quot; is what people say when they can&apos;t explain the process. When it fails — and it will — you get silence.</p>
               </div>
             </FadeInSection>
           </div>
           
           <FadeInSection delay={0.4}>
              <div className="mt-16 text-center text-2xl font-semibold tracking-tight text-primary">
-                There is a better way.
+                There is a different way to trade.
              </div>
           </FadeInSection>
         </div>
       </section>
 
       {/* SCORE SECTION */}
-      <section className="py-24 lg:py-32 bg-[#F9F8F6]" id="score">
+      <section className="py-24 lg:py-32 bg-[#F9F8F6]" id="features">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="w-full lg:w-1/2">
                <FadeInSection>
-                 <div className="text-xs font-data font-bold text-primary tracking-widest uppercase mb-4">Axiom Score</div>
+                 <div className="text-xs font-data font-bold text-primary tracking-widest uppercase mb-4">Indian Equities · Axiom Score</div>
                  <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
                   One number.
                   <br />
-                  <span className="text-primary">Every variable.</span>
+                  <span className="text-primary">127 stocks. 25 years of proof.</span>
                 </h2>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                   We run every Indian NSE/BSE stock through 8 institutional-grade financial models.
+                   We validated the Axiom Score against every major Indian market disaster and every major wealth creator from the last 25 years. It blocked all 40 disasters — Yes Bank, DHFL, Satyam, Kingfisher. It caught all 42 winners — Titan, Bajaj Finance, Page Industries, KEI. Zero losers bought. Zero winners missed.
                    <br/><br/>
-                   The output: a single score from 0–100. Rigorously validated. No hunches. No conflicts of interest.
+                   The score is 0–100. Above 72 is a buy. Below 65 is a hard pass. No opinion. No conflict of interest.
+                   <br/><br/>
+                   Validated on 127 real NSE/BSE stocks across all market cycles. Not backtested on cherry-picked data.
                  </p>
-                 <div className="space-y-3 font-data text-xs font-bold text-gray-500 tracking-widest uppercase">
-                    <div className="flex items-center gap-3"><Check className="w-4 h-4 text-green-500" /> Fundamental strength</div>
-                    <div className="flex items-center gap-3"><Check className="w-4 h-4 text-green-500" /> Technical structure</div>
-                    <div className="flex items-center gap-3"><Check className="w-4 h-4 text-green-500" /> Re-rating potential</div>
-                    <div className="flex items-center gap-3"><Check className="w-4 h-4 text-green-500" /> Discovery score (MDE)</div>
+                 <div className="space-y-4">
+                    {[
+                      {
+                        t: "Fundamental strength",
+                        s: "ROCE, FCF, debt, margins, management quality",
+                      },
+                      {
+                        t: "Technical timing",
+                        s: "Accumulation patterns, EMA position, Phoenix setup detection",
+                      },
+                      {
+                        t: "Rerating potential",
+                        s: "PE divergence, institutional ownership migration, trigger proximity",
+                      },
+                      {
+                        t: "Smart money discovery",
+                        s: "How undiscovered the stock is — before the crowd arrives",
+                      },
+                      {
+                        t: "Momentum & news penalties",
+                        s: "Tape momentum and headline risk folded into the score",
+                      },
+                    ].map((row) => (
+                      <div key={row.t} className="flex gap-3">
+                        <Check className="mt-0.5 h-[18px] w-[18px] shrink-0 text-green-500" aria-hidden />
+                        <div>
+                          <div className="text-[15px] font-medium text-gray-900">{row.t}</div>
+                          <div className="text-[13px] text-gray-500">{row.s}</div>
+                        </div>
+                      </div>
+                    ))}
                  </div>
                </FadeInSection>
             </div>
@@ -1168,16 +1205,14 @@ export default function Home() {
             </div>
             <div className="w-full lg:w-1/2">
                <FadeInSection>
-                 <div className="text-xs font-data font-bold text-blue-600 tracking-widest uppercase mb-4">US Futures Signals</div>
+                 <div className="text-xs font-data font-bold text-blue-600 tracking-widest uppercase mb-4">US FUTURES · LIVE SIGNALS</div>
                  <h2 className="mb-6 text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
-                   Know the exact entry.
-                   <br />
-                   <span className="text-primary">Know exactly why.</span>
+                   Stop watching setups fail because you were one minute late.
                  </h2>
                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                   Every Axiom signal fires only when five independent confirmation layers align simultaneously. Structure. Liquidity. Displacement. Entry model. Risk parameters. 
+                   Axiom pre-computes the entry zone, stop, and two targets before the candle closes. You open the platform, the setup is already there. You decide in seconds, not minutes.
                    <br/><br/>
-                   You see every layer. You understand every reason. And if any layer fails — the signal doesn't fire.
+                   Every signal shows which layers triggered and why. If any layer fails — the signal doesn&apos;t fire. No signal is better than a bad one.
                  </p>
                  <div className="flex gap-8 border-t border-gray-100 pt-6 mt-6">
                     <div>
@@ -1186,11 +1221,11 @@ export default function Home() {
                     </div>
                     <div>
                       <div className="font-data text-2xl font-bold tracking-tight text-gray-900">5</div>
-                      <div className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mt-1">Layers req.</div>
+                      <div className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mt-1">layers must align</div>
                     </div>
                     <div>
                       <div className="font-data text-2xl font-bold tracking-tight text-gray-900">2.1:1</div>
-                      <div className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mt-1">Min R:R</div>
+                      <div className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mt-1">Min R:R to fire</div>
                     </div>
                  </div>
                </FadeInSection>
@@ -1210,18 +1245,10 @@ export default function Home() {
                 FUTURES WORKSPACE
               </div>
               <h2 className="mx-auto text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 mb-4 max-w-3xl">
-                Stop watching setups fail because you entered a minute too late.{" "}
-                <span className="text-primary">
-                  Axiom tells you the zone <em className="italic">before</em> it matters.
-                </span>
+                Your prop firm account is 3 bad days from gone. Axiom makes sure you see the setup before it&apos;s too late.
               </h2>
-              <p className="mx-auto text-gray-600 mb-4 max-w-2xl text-lg leading-relaxed">
-                Most prop traders blow accounts not from bad strategy — from bad timing. They see the setup after
-                it&apos;s already moved. They size wrong. They hold through a news spike.
-              </p>
               <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
-                Axiom pre-computes your entry zone, stop, and two targets from five-layer confluence — before the candle
-                closes. You open the desk, you see the setup, you decide. That&apos;s it.
+                Built for Tradeify, Topstep, and Lucid traders. Risk calculator baked in. Session-aware signals. Entry zones pre-computed before the candle closes.
               </p>
             </div>
           </FadeInSection>
@@ -1232,33 +1259,124 @@ export default function Home() {
       </section>
 
       {/* PRO ANALYSIS */}
-      <section className="py-24 lg:py-32 bg-[#F0F4FF] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center max-w-4xl">
-           <FadeInSection>
-             <div className="text-xs font-data font-bold text-blue-600 tracking-widest uppercase mb-4">Pro Analysis</div>
-             <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6">Bring your own chart. Get institutional analysis.</h2>
-             <p className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
-               Upload screenshots of any chart. Our proprietary multi-timeframe engine reads structure, identifies key levels, and delivers a full technical and contextual analysis in seconds.
-             </p>
-             <div className="flex flex-col md:flex-row justify-center items-center gap-6 md:gap-4 font-data text-xs font-bold text-gray-500 tracking-widest uppercase">
-                <div className="bg-white px-6 py-4 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3">
-                  <UploadCloud className="w-5 h-5 text-blue-500"/> Upload charts
-                </div>
-                <ArrowRight className="text-blue-300 hidden md:block" />
-                <div className="bg-white px-6 py-4 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3">
-                  <Play className="w-4 h-4 text-blue-500"/> Apply your rules
-                </div>
-                <ArrowRight className="text-blue-300 hidden md:block" />
-                <div className="bg-white px-6 py-4 rounded-xl border-2 border-blue-600 shadow-sm flex items-center gap-3 text-gray-900">
-                  <Check className="w-5 h-5 text-blue-600"/> Get full analysis
-                </div>
-             </div>
-           </FadeInSection>
+      <section
+        id="pro-analysis"
+        className="overflow-hidden bg-[#F0F4FF] px-5 py-24 md:px-6 lg:py-32"
+      >
+        <div className="mx-auto max-w-[1200px]">
+          <FadeInSection>
+            <div className="mx-auto flex w-fit rounded-[20px] border border-blue-200/80 bg-blue-600/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-primary">
+              AI chart analysis
+            </div>
+          </FadeInSection>
+          <FadeInSection delay={0.06}>
+            <p className="mt-5 text-center text-[15px] font-medium text-gray-600 md:text-base">
+              Screenshot your chart.
+            </p>
+            <h2 className="mt-2 text-center text-4xl font-extrabold leading-tight text-gray-900 sm:text-5xl lg:mt-3">
+              Get a full read in 10 seconds.
+            </h2>
+          </FadeInSection>
+          <FadeInSection delay={0.12}>
+            <p className="mx-auto mt-6 max-w-[640px] text-center text-base leading-relaxed text-gray-600 md:text-lg">
+              Upload any chart — any timeframe, any instrument. Axiom reads market structure, flags key levels, and delivers a clean technical brief. Like having an experienced second pair of eyes before you pull the trigger.
+            </p>
+          </FadeInSection>
+
+          <div className="mt-12 flex w-full flex-col items-stretch gap-10 md:mt-14 md:flex-row md:items-start md:justify-center md:gap-3 lg:gap-5">
+            <FadeInSection>
+              <div className="flex min-w-0 flex-1 flex-col items-center text-center md:max-w-[300px] md:items-start md:text-left">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-[13px] font-medium text-white">
+                  01
+                </span>
+                <Upload className="mt-3 h-7 w-7 text-primary md:mx-0" aria-hidden />
+                <h3 className="mt-3 text-[17px] font-semibold text-gray-900">Upload your chart</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                  Monthly, weekly, daily, 4H, 1H, 30M, 15M, 5M. Upload any combination. PNG, JPG, WEBP.
+                </p>
+              </div>
+            </FadeInSection>
+            <div className="hidden shrink-0 items-center justify-center md:flex md:pt-11" aria-hidden>
+              <ArrowRight className="h-5 w-5 text-gray-400 lg:h-6 lg:w-6" />
+            </div>
+            <FadeInSection delay={0.08}>
+              <div className="flex min-w-0 flex-1 flex-col items-center text-center md:max-w-[300px] md:items-start md:text-left">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-[13px] font-medium text-white">
+                  02
+                </span>
+                <Brain className="mt-3 h-7 w-7 text-primary md:mx-0" aria-hidden />
+                <h3 className="mt-3 text-[17px] font-semibold text-gray-900">Your rules applied</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                  Use Axiom&apos;s default ruleset (ICT, OBs, FVGs, Al Brooks) or add your own rules on top.
+                </p>
+              </div>
+            </FadeInSection>
+            <div className="hidden shrink-0 items-center justify-center md:flex md:pt-11" aria-hidden>
+              <ArrowRight className="h-5 w-5 text-gray-400 lg:h-6 lg:w-6" />
+            </div>
+            <FadeInSection delay={0.16}>
+              <div className="flex min-w-0 flex-1 flex-col items-center text-center md:max-w-[300px] md:items-start md:text-left">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-[13px] font-medium text-white">
+                  03
+                </span>
+                <FileText className="mt-3 h-7 w-7 text-primary md:mx-0" aria-hidden />
+                <h3 className="mt-3 text-[17px] font-semibold text-gray-900">Full brief in seconds</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                  Entry zone, stop loss, targets, R:R, rule compliance check, and a complete written multi-timeframe breakdown.
+                </p>
+              </div>
+            </FadeInSection>
+          </div>
+
+          <div className="mt-14 flex justify-center md:mt-16">
+          <FadeInSection delay={0.2}>
+            <div className="w-full max-w-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-lg md:p-10">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Chart uploads</div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {["Monthly", "Weekly", "Daily"].map((x) => (
+                  <div
+                    key={x}
+                    className="flex h-14 items-center justify-center rounded-md border border-dashed border-gray-200 bg-gray-50 text-[10px] text-gray-500"
+                  >
+                    {x}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 grid grid-cols-5 gap-2">
+                {["4H", "1H", "30M", "15M", "5M"].map((x) => (
+                  <div
+                    key={x}
+                    className="flex h-12 items-center justify-center rounded-md border border-dashed border-gray-200 bg-gray-50 text-[9px] text-gray-500"
+                  >
+                    {x}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Trading rules</div>
+              <div className="mt-3 space-y-2.5 text-xs text-gray-700">
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input type="radio" name="pro-analysis-rules-v2" defaultChecked className="h-4 w-4 accent-primary" />
+                  Axiom default (ICT / OBs / FVGs)
+                </label>
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input type="radio" name="pro-analysis-rules-v2" className="h-4 w-4 accent-primary" />
+                  Custom ruleset
+                </label>
+              </div>
+              <button
+                type="button"
+                className="mt-6 w-full rounded-[10px] bg-primary py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-95"
+              >
+                Run multi-timeframe analysis →
+              </button>
+            </div>
+          </FadeInSection>
+          </div>
         </div>
       </section>
 
       {/* MARKETS */}
-      <section className="py-24 lg:py-32 bg-white">
+      <section className="py-24 lg:py-32 bg-white" id="markets">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
            <FadeInSection>
              <h2 className="text-center text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-16">One platform.<br/>Every market that matters.</h2>
@@ -1271,12 +1389,12 @@ export default function Home() {
                    <div className="mb-6 mt-2"><TrendingUp className="w-7 h-7 text-blue-600" /></div>
                    <h3 className="text-[22px] font-bold mb-6 text-gray-900 tracking-tight">Indian Equities</h3>
                    <ul className="space-y-4 text-[15px] text-gray-500 mb-6">
-                     <li><span className="font-bold text-gray-900">220+ stocks</span> — NSE and BSE</li>
-                     <li><span className="font-bold text-gray-900">8 models</span> — institutional scoring</li>
-                     <li><span className="font-bold text-gray-900">Quarterly</span> — score updates</li>
+                     <li><span className="font-bold text-gray-900">220+</span> stocks · NSE and BSE</li>
+                     <li><span className="font-bold text-gray-900">8 models</span> · 127 stocks validated</li>
+                     <li><span className="font-bold text-gray-900">Quarterly</span> updates · zero opinion</li>
                    </ul>
                    <p className="text-[14px] text-gray-500 leading-relaxed mb-8 flex-grow">
-                     Axiom Score ranks every covered NSE/BSE stock from 0–100. Fundamentals, technicals, re-rating potential, and discovery — in one number.
+                     220+ NSE/BSE stocks scored 0–100. Eight institutional models. Updated quarterly. No broker. No conflict of interest.
                    </p>
                    <div className="flex flex-wrap gap-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase font-data">
                      <span className="bg-gray-100 px-2.5 py-1.5 rounded-md">NIFTY 50</span>
@@ -1295,19 +1413,11 @@ export default function Home() {
                    <h3 className="text-[22px] font-bold mb-6 text-gray-900 tracking-tight">US Futures</h3>
                    <ul className="space-y-4 text-[15px] text-gray-500 mb-6">
                      <li><span className="font-bold text-gray-900">13</span> instruments</li>
-                     <li><span className="font-bold text-gray-900">24/7</span> signal scanning</li>
-                     <li><span className="font-bold text-gray-900">5-layer</span> confirmation</li>
-                     <li>
-                       <span className="font-bold text-gray-900">Prop firm ready</span>
-                       {" — Tradeify, Topstep, Lucid & more"}
-                     </li>
-                     <li>
-                       <span className="font-bold text-gray-900">Eval & funded account</span>
-                       {" risk calculator built in"}
-                     </li>
+                     <li><span className="font-bold text-gray-900">24/7</span> · signals never sleep</li>
+                     <li><span className="font-bold text-gray-900">5 layers</span> · all must align</li>
                    </ul>
                    <p className="text-[14px] text-gray-500 leading-relaxed mb-8 flex-grow">
-                     Gold, Silver, Crude Oil, Natural Gas, Nasdaq 100, S&P 500, Dow Jones, Russell 2000, Treasuries, FX pairs, and Copper.
+                     Gold, Silver, Crude, Nasdaq 100, S&P 500, Dow, Russell 2000, Treasuries, FX, and Copper — with live signals and a prop firm risk calculator built in.
                    </p>
                    <div className="flex flex-wrap gap-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase font-data">
                      <span className="bg-gray-100 px-2.5 py-1.5 rounded-md">METALS</span>
@@ -1330,7 +1440,7 @@ export default function Home() {
                      <li><span className="font-bold text-gray-900">Benchmark</span> — comparison built-in</li>
                    </ul>
                    <p className="text-[14px] text-gray-500 leading-relaxed mb-8 flex-grow">
-                     Track all your Indian mutual fund holdings in one place. See real XIRR, benchmark comparison, and AI-powered gap analysis.
+                     All AMFI schemes tracked. Real XIRR. Benchmark comparison. AI-powered gap analysis on your portfolio.
                    </p>
                    <div className="flex flex-wrap gap-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase font-data">
                      <span className="bg-gray-100 px-2.5 py-1.5 rounded-md">EQUITY</span>
@@ -1352,89 +1462,143 @@ export default function Home() {
               {[1,2,3,4,5].map(i => <svg key={i} className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z"/></svg>)}
             </div>
             <p className="text-2xl md:text-3xl font-medium text-gray-900 leading-snug mb-8">
-              "I spent 4 years taking tips from a broker who charged me ₹8,000 a month for signals that had no logic behind them. One look at Axiom's five-layer reasoning and I understood more about one trade than I had in four years."
+              I paid ₹8,000 a month for four years for signals with no logic behind them. The first Axiom signal I read explained more about one trade than four years of broker tips combined.
             </p>
             <div className="text-sm font-bold text-gray-500 uppercase tracking-widest font-data">
-              — Early Axiom user, Mumbai
+              — Early user, Mumbai
             </div>
           </FadeInSection>
         </div>
       </section>
 
       {/* PRICING */}
-      <section className="py-24 lg:py-32 bg-white" id="pricing">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <section className="bg-white px-5 py-24 md:px-6 lg:py-32" id="pricing">
+        <div className="mx-auto max-w-[1100px]">
           <FadeInSection>
-            <div className="text-center mb-16">
-              <div className="text-xs font-data font-bold text-gray-400 tracking-widest uppercase mb-4">Simple Pricing</div>
-              <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-4">Start free.<br/>Upgrade when you're ready.</h2>
-              <p className="text-gray-500 font-medium">7-day free trial. No credit card required.</p>
+            <div className="mx-auto flex w-fit rounded-[20px] border border-blue-200/80 bg-blue-600/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-primary">
+              Pricing
             </div>
           </FadeInSection>
+          <FadeInSection delay={0.06}>
+            <h2 className="mt-6 text-center text-4xl font-extrabold text-gray-900 sm:text-5xl">
+              Free until you&apos;re convinced.
+              <br />
+              Cheap once you are.
+            </h2>
+          </FadeInSection>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
             {/* Explorer */}
             <FadeInSection delay={0.1}>
-              <div className="p-8 rounded-[2rem] border border-gray-100 flex flex-col h-full hover:border-gray-200 transition">
-                <h3 className="text-xl font-bold mb-2">Explorer</h3>
-                <div className="font-data text-4xl font-bold text-gray-900 mb-1 tracking-tight">₹0<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
-                <span className="text-sm text-gray-500 font-medium block mb-6">Free forever</span>
-                <ul className="space-y-4 text-sm text-gray-600 font-medium flex-grow mb-8">
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5"/> 3 score lookups/day</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5"/> Live prices</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5"/> Market overview</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5"/> Session timeline</li>
+              <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6">
+                <h3 className="text-xl font-bold text-gray-900">Explorer</h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="font-data text-4xl font-extrabold text-gray-900">₹0</span>
+                  <span className="text-sm text-gray-500">/month</span>
+                </div>
+                <ul className="mt-6 flex flex-1 flex-col gap-2 text-sm">
+                  {[
+                    ["✓", "3 Axiom Score lookups per day", true],
+                    ["✓", "Live futures prices", true],
+                    ["✓", "Market overview", true],
+                    ["✓", "Session timeline", true],
+                    ["✗", "Full score breakdown", false],
+                    ["✗", "Signal reasoning", false],
+                    ["✗", "AI co-pilot", false],
+                  ].map(([icon, text, ok]) => (
+                    <li
+                      key={text as string}
+                      className={`flex items-start gap-2 ${ok ? "text-gray-900" : "text-gray-400"}`}
+                    >
+                      <span className={ok ? "text-green-600" : "text-red-500"}>{icon}</span>
+                      {text as string}
+                    </li>
+                  ))}
                 </ul>
-                <button className="w-full py-3 rounded-full border border-gray-200 font-semibold hover:bg-gray-50 transition">Get Started</button>
+                <button
+                  type="button"
+                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-gray-200 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  Start free
+                </button>
               </div>
             </FadeInSection>
 
             {/* Pro */}
-            <FadeInSection delay={0.2}>
-              <div className="p-8 rounded-[2rem] border-2 border-primary shadow-xl flex flex-col h-full relative transform md:-translate-y-4 bg-white">
-                <div className="absolute top-0 right-8 transform -translate-y-1/2 bg-blue-100 text-primary text-xs font-bold px-3 py-1 rounded-full border border-blue-200">
+            <FadeInSection delay={0.15}>
+              <div className="relative flex h-full flex-col rounded-xl border-2 border-primary bg-white p-6 shadow-[0_8px_32px_rgba(37,99,235,0.15)]">
+                <span className="absolute right-4 top-4 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
                   MOST POPULAR
+                </span>
+                <h3 className="text-xl font-bold text-gray-900">Pro</h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="font-data text-4xl font-extrabold text-gray-900">₹799</span>
+                  <span className="text-sm text-gray-500">/month</span>
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-primary">Pro</h3>
-                <div className="font-data text-4xl font-bold text-gray-900 mb-1 tracking-tight">₹799<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
-                <span className="text-xs text-gray-400 block">~$9 USD/mo</span>
-                <div className="text-xs text-gray-400 mb-1 font-medium mt-2">(₹6,999/yr)</div>
-                <span className="text-xs text-gray-400 block mb-6">~$80 USD/yr</span>
-                <ul className="space-y-4 text-sm text-gray-800 font-medium flex-grow mb-8">
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Unlimited scores</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Real-time signals + 5-layer reasoning</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> 50 AI messages</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Telegram alerts</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5"/> Pro Analysis 10/month</li>
+                <p className="mt-2 text-[13px] font-medium text-green-600">₹6,999/year — save ₹2,589</p>
+                <ul className="mt-6 flex flex-1 flex-col gap-2 text-sm text-gray-900">
+                  {[
+                    "Unlimited Axiom Scores",
+                    "Live signals · full 5-layer reasoning",
+                    "50 AI co-pilot messages",
+                    "Telegram alerts · instant delivery",
+                    "Full mutual fund tracking",
+                    "AI chart analysis · 10 uploads/month",
+                    "Score history + SSI tracking",
+                  ].map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" aria-hidden />
+                      {f}
+                    </li>
+                  ))}
                 </ul>
-                <button className="w-full py-4 rounded-full bg-primary text-white font-semibold hover:bg-blue-800 transition shadow-lg shadow-blue-500/20">Start 7-Day Free Trial</button>
+                <button
+                  type="button"
+                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-primary text-sm font-semibold text-white hover:bg-blue-800"
+                >
+                  Start Pro →
+                </button>
               </div>
             </FadeInSection>
 
             {/* Elite */}
-            <FadeInSection delay={0.3}>
-              <div className="p-8 rounded-[2rem] border border-gray-100 flex flex-col h-full hover:border-gray-200 transition">
-                <h3 className="text-xl font-bold mb-2">Elite</h3>
-                 <div className="font-data text-4xl font-bold text-gray-900 mb-1 tracking-tight">₹1,999<span className="text-sm text-gray-500 font-sans tracking-normal font-medium">/month</span></div>
-                <span className="text-xs text-gray-400 block">~$23 USD/mo</span>
-                <div className="text-xs text-gray-400 mb-1 font-medium mt-2">(₹17,999/yr)</div>
-                <span className="text-xs text-gray-400 block mb-6">~$205 USD/yr</span>
-                <ul className="space-y-4 text-sm text-gray-600 font-medium flex-grow mb-8">
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-gray-900 shrink-0 mt-0.5"/> Everything in Pro</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-gray-900 shrink-0 mt-0.5"/> Unlimited AI</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-gray-900 shrink-0 mt-0.5"/> Unlimited uploads</li>
-                  <li className="flex items-start gap-3"><Check className="w-4 h-4 text-gray-900 shrink-0 mt-0.5"/> API access</li>
+            <FadeInSection delay={0.2}>
+              <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6">
+                <h3 className="text-xl font-bold text-gray-900">Elite</h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="font-data text-4xl font-extrabold text-gray-900">₹1,999</span>
+                  <span className="text-sm text-gray-500">/month</span>
+                </div>
+                <p className="mt-2 text-[13px] text-gray-500">₹17,999/year</p>
+                <ul className="mt-6 flex flex-1 flex-col gap-2 text-sm text-gray-900">
+                  {[
+                    "Everything in Pro",
+                    "Unlimited AI messages",
+                    "Unlimited Pro Analysis uploads",
+                    "API access",
+                    "Priority support",
+                    "Early access to new features",
+                  ].map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" aria-hidden />
+                      {f}
+                    </li>
+                  ))}
                 </ul>
-                <button className="w-full py-3 rounded-full bg-gray-900 text-white font-semibold hover:bg-black transition">Upgrade to Elite</button>
+                <button
+                  type="button"
+                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-gray-200 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  Start Elite
+                </button>
               </div>
             </FadeInSection>
           </div>
-          <p className="text-center text-xs text-gray-400 mt-4">
-            USD billing available ·{" "}
-            <a href="mailto:hello@axiom.trade" className="underline">
-              contact us
-            </a>
-          </p>
+          <FadeInSection delay={0.25}>
+            <p className="mt-10 text-center text-sm text-gray-400">
+              7-day trial on Pro. No card to start. Cancel in one click.
+            </p>
+          </FadeInSection>
         </div>
       </section>
 
@@ -1447,19 +1611,27 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <FadeInSection>
              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
-               The research is done.<br/>The signal is ready.<br/><span className="text-blue-400">What are you waiting for?</span>
+               The signal is already running.<br/>Are you watching it?
              </h2>
              <p className="text-lg text-slate-300 mb-10">
-               Join serious investors who stopped guessing and started knowing.
+               Every minute you&apos;re not on Axiom, you&apos;re trading on someone else&apos;s information — or none at all.
              </p>
-             <button className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-5 rounded-full text-lg font-bold transition-transform hover:scale-105 mb-8 shadow-2xl shadow-blue-500/30">
-                Start for free today
-             </button>
+             <div className="mb-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+               <button
+                 type="button"
+                 className="inline-flex h-14 min-w-[200px] items-center justify-center rounded-[10px] bg-white px-8 text-base font-bold text-gray-900 transition hover:bg-gray-100"
+               >
+                 Start free today →
+               </button>
+               <a
+                 href="#features"
+                 className="inline-flex h-14 min-w-[200px] items-center justify-center rounded-[10px] border border-white/20 px-8 text-base font-medium text-white transition hover:bg-white/10"
+               >
+                 See how it works →
+               </a>
+             </div>
              <div className="flex justify-center flex-wrap gap-6 text-xs font-bold text-slate-400 tracking-widest uppercase font-data mb-24">
-                <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400"/> Free to start</span>
-                <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400"/> No broker fees</span>
-                <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400"/> Cancel anytime</span>
-                <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400"/> Data never sold</span>
+                <span>No card needed · No broker fees · Cancel anytime · Your data is never sold</span>
              </div>
           </FadeInSection>
         </div>

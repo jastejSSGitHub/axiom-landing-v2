@@ -34,7 +34,7 @@ export const LANDING_FUTURES_SIGNALS: MockFuturesSignal[] = [
     session: "NY Core",
     setupScore: "A (4/5)",
     reasoningLayers: [
-      "★ London swept the Asian low at 3AM — the most reliable Gold pattern. FVG formed on the reversal. Firing now.",
+      "London swept the Asian low at 3AM — the most reliable Gold pattern. FVG formed on the reversal. Firing now.",
       "Layer 2 — Liquidity: Asian low swept pre-London; sell-side liquidity targeted.",
       "Layer 3 — Displacement: 1H FVG formed on CPI flush reversal.",
       "Layer 4 — Entry: 15m OB + FVG confluence inside NY Core window.",
@@ -109,7 +109,7 @@ export const HERO_CRUDE_SIGNAL_SEED: MockFuturesSignal = {
   session: "NY Core",
   setupScore: "A (4/5)",
   reasoningLayers: [
-    "★ Weekly inventory draw plus OPEC tone priced a demand floor. CL holding above prior day VAH — continuation lean.",
+    "Weekly inventory draw plus OPEC rhetoric priced a demand floor. CL holding above prior day's VAH — continuation setup.",
     "Layer 2 — Liquidity: Equal highs above; sell-side liquidity likely run on push.",
     "Layer 3 — Displacement: 1H bullish FVG after inventory.",
     "Layer 4 — Entry: 15m OB confluence with daily POC.",

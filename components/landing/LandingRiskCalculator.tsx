@@ -350,7 +350,7 @@ export function LandingRiskCalculator({ symbol, entry, stop, autoDemo = true }: 
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-3">
         <div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-500">Risk calculator</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-500">Prop firm risk calculator</h2>
           <p className="mt-1 font-mono text-xs text-gray-500">{headerLine}</p>
         </div>
       </div>

@@ -48,8 +48,8 @@ export function FuturesPlatformShowcase({
       <div className="text-center">
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-blue-600">SIGNAL CARDS</h3>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600">
-          Not a vague &quot;go long here.&quot; A specific entry zone, stop, and two targets — pre-computed from five
-          layers of confluence before the candle closes.
+          Not &quot;go long here.&quot; A specific entry zone, stop loss, and two targets — computed from five layers of
+          confluence before the candle closes. Every layer visible. Every reason explained.
         </p>
         <div className="mx-auto w-full max-w-6xl rounded-[28px] bg-gradient-to-br from-[#cfe8ff] via-[#4a7eb8] to-[#0a1f3d] p-5 shadow-xl ring-1 ring-black/5 sm:p-7 md:p-8">
           <div className="grid gap-6 text-left lg:grid-cols-3 [&>div]:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]">
@@ -96,8 +96,8 @@ export function FuturesPlatformShowcase({
                 Know your exact risk before you click buy.
               </h2>
               <p className="w-full max-w-full text-pretty text-lg leading-relaxed text-gray-600 break-words sm:max-w-[560px]">
-                Pick your firm, your account size, and your stop — Axiom tells you exactly how many contracts you can take
-                without breaking a single rule.
+                Choose your firm, account size, and stop distance. See exactly how many contracts you can take and what
+                your total dollar risk is — before you place the trade.
               </p>
             </div>
             <div className="min-w-0">

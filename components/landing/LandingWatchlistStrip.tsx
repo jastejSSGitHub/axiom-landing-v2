@@ -242,8 +242,8 @@ export function LandingWatchlistStrip({
     <div className="w-full min-w-0">
       <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Your watchlist</h3>
       <p className="mb-4 max-w-2xl text-sm text-gray-600">
-        Pin the contracts you trade most — live prices, session-aware quality, and signal state in one glance. After you
-        sign up, your watchlist syncs across web and alerts.
+        Pin the contracts you trade. Live prices, session quality, and signal state at a glance. Syncs to Telegram alerts
+        the moment you sign up.
       </p>
       {/* Full viewport width — green gradient band behind the carousel (matches landing mock) */}
       <div
